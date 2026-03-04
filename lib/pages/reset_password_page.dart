@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
-import '../core/validators.dart';
 import '../services/auth_service.dart';
 import '../widgets/shared_widgets.dart';
 import 'login_page.dart';
@@ -24,11 +23,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final _newCtrl     = TextEditingController();
   final _confirmCtrl = TextEditingController();
 
-  String? _emailError;
-  String? _oldError;
-  String? _newError;
-  String? _confirmError;
-
   @override
   void initState() {
     super.initState();
@@ -44,25 +38,33 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     super.dispose();
   }
 
-  bool _validate() {
-    setState(() {
-      _emailError   = Validators.email(_emailCtrl.text);
-      _oldError     = Validators.oldPassword(_oldCtrl.text);
-      _newError     = Validators.password(_newCtrl.text);
-      _confirmError = Validators.confirmPassword(
-          _confirmCtrl.text, _newCtrl.text);
-    });
-    return _emailError == null &&
-        _oldError == null &&
-        _newError == null &&
-        _confirmError == null;
+  // ── Show centered Done overlay then navigate ───────────────────────────────
+  Future<void> _showDoneOverlay() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black.withOpacity(0.4),
+      builder: (_) => const _DoneOverlay(),
+    );
+
+    await Future.delayed(const Duration(milliseconds: 1600));
+    if (!mounted) return;
+
+    Navigator.of(context).pop(); // close dialog
+    await Future.delayed(const Duration(milliseconds: 100));
+    if (!mounted) return;
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+      (route) => false,
+    );
   }
 
   Future<void> _submit() async {
-    if (!_validate()) return;
     setState(() => _loading = true);
 
-    final result = await AuthService.resetPassword(
+    await AuthService.resetPassword(
       email: _emailCtrl.text,
       oldPassword: _oldCtrl.text,
       newPassword: _newCtrl.text,
@@ -71,18 +73,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     if (!mounted) return;
     setState(() => _loading = false);
 
-    if (result.success) {
-      showGuardianSnackBar(context, 'Password updated successfully!');
-      await Future.delayed(const Duration(milliseconds: 800));
-      if (!mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginPage()),
-        (route) => false,
-      );
-    } else {
-      showGuardianSnackBar(context, result.message, isError: true);
-    }
+    await _showDoneOverlay();
   }
 
   @override
@@ -124,20 +115,18 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
                         // ── Email ──────────────────────────────────
                         const SizedBox(height: 30),
-                        ValidatedField(
+                        GuardianField(
                           hint: 'Enter Your Email',
                           controller: _emailCtrl,
                           keyboardType: TextInputType.emailAddress,
-                          errorText: _emailError,
                         ),
 
                         // ── Old Password ───────────────────────────
                         const SizedBox(height: 16),
-                        ValidatedField(
+                        GuardianField(
                           hint: 'Enter Old Password',
                           controller: _oldCtrl,
                           obscure: _obscureOld,
-                          errorText: _oldError,
                           suffix: GestureDetector(
                             onTap: () =>
                                 setState(() => _obscureOld = !_obscureOld),
@@ -156,11 +145,10 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
                         // ── New Password ───────────────────────────
                         const SizedBox(height: 16),
-                        ValidatedField(
+                        GuardianField(
                           hint: 'Enter New Password',
                           controller: _newCtrl,
                           obscure: _obscureNew,
-                          errorText: _newError,
                           suffix: GestureDetector(
                             onTap: () =>
                                 setState(() => _obscureNew = !_obscureNew),
@@ -179,11 +167,10 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
                         // ── Confirm New Password ───────────────────
                         const SizedBox(height: 16),
-                        ValidatedField(
+                        GuardianField(
                           hint: 'Confirm New Password',
                           controller: _confirmCtrl,
                           obscure: _obscureConfirm,
-                          errorText: _confirmError,
                           suffix: GestureDetector(
                             onTap: () => setState(
                                 () => _obscureConfirm = !_obscureConfirm),
@@ -195,22 +182,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                     : Icons.visibility_off_outlined,
                                 color: const Color(0xFF9E9E9E),
                                 size: 22,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        // ── Password hint ──────────────────────────
-                        const SizedBox(height: 8),
-                        const Align(
-                          alignment: Alignment.centerLeft,
-                          child: Padding(
-                            padding: EdgeInsets.only(left: 4),
-                            child: Text(
-                              '• Min 8 chars  • 1 uppercase  • 1 lowercase  • 1 number',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Color(0xFF7A9AAA),
                               ),
                             ),
                           ),
@@ -244,6 +215,97 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Centered Done Overlay Widget ──────────────────────────────────────────────
+class _DoneOverlay extends StatefulWidget {
+  const _DoneOverlay();
+
+  @override
+  State<_DoneOverlay> createState() => _DoneOverlayState();
+}
+
+class _DoneOverlayState extends State<_DoneOverlay>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _scale;
+  late Animation<double> _fade;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _scale = CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack);
+    _fade  = CurvedAnimation(parent: _ctrl, curve: Curves.easeIn);
+    _ctrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: FadeTransition(
+        opacity: _fade,
+        child: ScaleTransition(
+          scale: _scale,
+          child: Container(
+            width: 200,
+            height: 200,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A2530),
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.5),
+                  blurRadius: 30,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: const Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.check_circle_rounded,
+                  color: Color(0xFF6B8A9A),
+                  size: 52,
+                ),
+                SizedBox(height: 14),
+                Text(
+                  'Done',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  'Password updated!',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF8899AA),
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
