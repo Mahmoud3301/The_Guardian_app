@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/pages/livevideo_page.dart';
+import 'package:flutter_application_1/widgets/app_nav.dart';
 import '../core/app_colors.dart';
 import '../core/user_model.dart';
 import '../widgets/shared_widgets.dart';
@@ -13,7 +13,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _selectedIndex = 0;
   bool _isArmed = true;
 
   @override
@@ -55,7 +54,7 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 24),
 
-            // ── Main scrollable content ─────────────────────────────
+            // ── Main content ────────────────────────────────────────
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
@@ -63,32 +62,18 @@ class _HomePageState extends State<HomePage> {
                 child: Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    gradient: AppColors.cardGradient, // same as login page card
+                    gradient: AppColors.cardGradient,
                     borderRadius: BorderRadius.circular(36),
                   ),
                   padding: const EdgeInsets.fromLTRB(20, 28, 20, 28),
                   child: Column(
                     children: [
-
-                      // ── Toggle switch ──────────────────────────
                       _buildToggleSwitch(),
                       const SizedBox(height: 20),
-
-                      // ── Battery Health ─────────────────────────
-                      _buildInfoCard(
-                        label: 'Battery Health',
-                        icon: Icons.battery_full_rounded,
-                      ),
+                      _buildInfoCard(label: 'Battery Health', icon: Icons.battery_full_rounded),
                       const SizedBox(height: 14),
-
-                      // ── Connection ─────────────────────────────
-                      _buildInfoCard(
-                        label: 'Connection',
-                        icon: Icons.wifi_rounded,
-                      ),
+                      _buildInfoCard(label: 'Connection', icon: Icons.wifi_rounded),
                       const SizedBox(height: 14),
-
-                      // ── Backup Time ────────────────────────────
                       _buildBackupCard(),
                     ],
                   ),
@@ -96,15 +81,14 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            // ── Bottom nav bar ──────────────────────────────────────
-            _buildBottomNav(),
+            // ── Bottom nav ──────────────────────────────────────────
+            AppBottomNav(currentIndex: 0, user: widget.user),
           ],
         ),
       ),
     );
   }
 
-  // ── Toggle Switch ──────────────────────────────────────────────────────────
   Widget _buildToggleSwitch() {
     return GestureDetector(
       onTap: () => setState(() => _isArmed = !_isArmed),
@@ -114,10 +98,7 @@ class _HomePageState extends State<HomePage> {
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.07),
           borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.08),
-            width: 1,
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.08)),
         ),
         child: Center(
           child: AnimatedContainer(
@@ -138,8 +119,7 @@ class _HomePageState extends State<HomePage> {
             child: AnimatedAlign(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOut,
-              alignment:
-                  _isArmed ? Alignment.centerRight : Alignment.centerLeft,
+              alignment: _isArmed ? Alignment.centerRight : Alignment.centerLeft,
               child: Container(
                 margin: const EdgeInsets.all(4),
                 width: 26,
@@ -156,7 +136,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ── Info Card ──────────────────────────────────────────────────────────────
   Widget _buildInfoCard({required String label, required IconData icon}) {
     return Container(
       width: double.infinity,
@@ -164,10 +143,7 @@ class _HomePageState extends State<HomePage> {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.07),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.08),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -187,7 +163,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ── Backup Time Card ───────────────────────────────────────────────────────
   Widget _buildBackupCard() {
     return Container(
       width: double.infinity,
@@ -195,10 +170,7 @@ class _HomePageState extends State<HomePage> {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.07),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.08),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -213,94 +185,32 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           const SizedBox(height: 12),
-          _buildBulletRow('9:30'),
+          _bullet('9:30'),
           const SizedBox(height: 8),
-          _buildBulletRow('Updates the  Database\nwith New Informtion'),
+          _bullet('Updates the  Database\nwith New Informtion'),
         ],
       ),
     );
   }
 
-  Widget _buildBulletRow(String text) {
+  Widget _bullet(String text) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
           padding: EdgeInsets.only(top: 4, right: 10),
-          child: Text(
-            '•',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white70,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
+          child: Text('•',
+              style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white70,
+                  fontWeight: FontWeight.w900)),
         ),
         Expanded(
-          child: Text(
-            text,
-            style: const TextStyle(
-              fontSize: 15,
-              color: Colors.white70,
-              height: 1.4,
-            ),
-          ),
+          child: Text(text,
+              style: const TextStyle(
+                  fontSize: 15, color: Colors.white70, height: 1.4)),
         ),
       ],
-    );
-  }
-
-  // ── Bottom Navigation Bar ──────────────────────────────────────────────────
-  Widget _buildBottomNav() {
-    final items = [
-      Icons.home_rounded,
-      Icons.sensors_rounded,       // ← navigates to LiveVideoPage
-      Icons.notifications_rounded,
-      Icons.group_rounded,
-    ];
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      decoration: BoxDecoration(
-        gradient: AppColors.cardGradient,
-        borderRadius: BorderRadius.circular(30),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(items.length, (i) {
-          final selected = _selectedIndex == i;
-          return GestureDetector(
-            onTap: () {
-              setState(() => _selectedIndex = i);
-              if (i == 1) {
-                // sensors button → Live Video
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const LiveVideoPage()),
-                );
-              }
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: selected
-                    ? Colors.white.withOpacity(0.15)
-                    : Colors.white.withOpacity(0.06),
-              ),
-              child: Icon(
-                items[i],
-                color: selected ? Colors.white : Colors.white54,
-                size: 26,
-              ),
-            ),
-          );
-        }),
-      ),
     );
   }
 }
