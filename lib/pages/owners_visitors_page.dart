@@ -78,7 +78,7 @@ class OwnersVisitorsPage extends StatelessWidget {
             ),
             clipBehavior: Clip.antiAlias,
             child: Image.asset(
-              'assets/images/avatar.png',
+              'assets/images/person1.jpeg',
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => const Icon(
                   Icons.person_rounded,
