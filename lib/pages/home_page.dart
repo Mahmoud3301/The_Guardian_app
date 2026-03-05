@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/pages/livevideo_page.dart';
 import '../core/app_colors.dart';
 import '../core/user_model.dart';
 import '../widgets/shared_widgets.dart';
@@ -62,7 +63,7 @@ class _HomePageState extends State<HomePage> {
                 child: Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF131E28),
+                    gradient: AppColors.cardGradient, // same as login page card
                     borderRadius: BorderRadius.circular(36),
                   ),
                   padding: const EdgeInsets.fromLTRB(20, 28, 20, 28),
@@ -111,8 +112,12 @@ class _HomePageState extends State<HomePage> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 18),
         decoration: BoxDecoration(
-          color: const Color(0xFF1C2B38),
+          color: Colors.white.withOpacity(0.07),
           borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.08),
+            width: 1,
+          ),
         ),
         child: Center(
           child: AnimatedContainer(
@@ -157,8 +162,12 @@ class _HomePageState extends State<HomePage> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 22),
       decoration: BoxDecoration(
-        color: const Color(0xFF1C2B38),
+        color: Colors.white.withOpacity(0.07),
         borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.08),
+          width: 1,
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -184,8 +193,12 @@ class _HomePageState extends State<HomePage> {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(22, 22, 22, 24),
       decoration: BoxDecoration(
-        color: const Color(0xFF1C2B38),
+        color: Colors.white.withOpacity(0.07),
         borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.08),
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -241,7 +254,7 @@ class _HomePageState extends State<HomePage> {
   Widget _buildBottomNav() {
     final items = [
       Icons.home_rounded,
-      Icons.sensors_rounded,
+      Icons.sensors_rounded,       // ← navigates to LiveVideoPage
       Icons.notifications_rounded,
       Icons.group_rounded,
     ];
@@ -250,7 +263,7 @@ class _HomePageState extends State<HomePage> {
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF131E28),
+        gradient: AppColors.cardGradient,
         borderRadius: BorderRadius.circular(30),
       ),
       child: Row(
@@ -258,7 +271,17 @@ class _HomePageState extends State<HomePage> {
         children: List.generate(items.length, (i) {
           final selected = _selectedIndex == i;
           return GestureDetector(
-            onTap: () => setState(() => _selectedIndex = i),
+            onTap: () {
+              setState(() => _selectedIndex = i);
+              if (i == 1) {
+                // sensors button → Live Video
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const LiveVideoPage()),
+                );
+              }
+            },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 250),
               width: 52,
@@ -266,8 +289,8 @@ class _HomePageState extends State<HomePage> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: selected
-                    ? const Color(0xFF2E4255)
-                    : const Color(0xFF1C2B38),
+                    ? Colors.white.withOpacity(0.15)
+                    : Colors.white.withOpacity(0.06),
               ),
               child: Icon(
                 items[i],
