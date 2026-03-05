@@ -69,7 +69,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
             entry.imagePath,
           );
           setState(() {
-            entry.label  = name.isNotEmpty ? name : 'Unknown';
+            entry.label = name.isNotEmpty ? name : 'Unknown';
             entry.status = NotifStatus.dismissed;
           });
           Navigator.pop(ctx);
@@ -144,14 +144,14 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         if (entry.status == NotifStatus.risk) {
                           return _RiskCard(
                             entry: entry,
-                            onLockDoor:      () => _onLockDoor(entry),
+                            onLockDoor: () => _onLockDoor(entry),
                             onCallEmergency: () => _onCallEmergency(entry),
                           );
                         }
                         return _PersonCard(
                           entry: entry,
                           onYes: () => _onYes(entry),
-                          onNo:  () => _onNo(entry),
+                          onNo: () => _onNo(entry),
                         );
                       },
                     ),
@@ -184,7 +184,8 @@ class _PersonCard extends StatelessWidget {
   final _NotifEntry entry;
   final VoidCallback onYes;
   final VoidCallback onNo;
-  const _PersonCard({required this.entry, required this.onYes, required this.onNo});
+  const _PersonCard(
+      {required this.entry, required this.onYes, required this.onNo});
 
   @override
   Widget build(BuildContext context) {
@@ -198,9 +199,13 @@ class _PersonCard extends StatelessWidget {
         children: [
           const Text('Do you want to add this person?',
               style: TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white)),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white)),
           const SizedBox(height: 14),
-          Center(child: _FaceImage(imagePath: entry.imagePath, width: 160, height: 180)),
+          Center(
+              child: _FaceImage(
+                  imagePath: entry.imagePath, width: 160, height: 180)),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -221,7 +226,10 @@ class _RiskCard extends StatelessWidget {
   final _NotifEntry entry;
   final VoidCallback onLockDoor;
   final VoidCallback onCallEmergency;
-  const _RiskCard({required this.entry, required this.onLockDoor, required this.onCallEmergency});
+  const _RiskCard(
+      {required this.entry,
+      required this.onLockDoor,
+      required this.onCallEmergency});
 
   @override
   Widget build(BuildContext context) {
@@ -237,17 +245,21 @@ class _RiskCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: const Color(0xFFFF1744).withOpacity(0.15),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFFF1744).withOpacity(0.4)),
+              border:
+                  Border.all(color: const Color(0xFFFF1744).withOpacity(0.4)),
             ),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.warning_rounded, color: Color(0xFFFF5722), size: 16),
+                Icon(Icons.warning_rounded,
+                    color: Color(0xFFFF5722), size: 16),
                 SizedBox(width: 6),
                 Text('RISK DETECTED',
                     style: TextStyle(
-                        fontSize: 12, fontWeight: FontWeight.w800,
-                        color: Color(0xFFFF5722), letterSpacing: 1)),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFFFF5722),
+                        letterSpacing: 1)),
               ],
             ),
           ),
@@ -258,26 +270,40 @@ class _RiskCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: const Color(0xFF0D1820),
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFFF5722).withOpacity(0.3)),
+              border: Border.all(
+                  color: const Color(0xFFFF5722).withOpacity(0.3)),
             ),
             child: Column(
               children: [
-                _FaceImage(imagePath: entry.imagePath, width: 120, height: 130),
+                _FaceImage(
+                    imagePath: entry.imagePath, width: 120, height: 130),
                 const SizedBox(height: 12),
                 const Text('Risk ...',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white)),
                 const SizedBox(height: 4),
                 const Text('Alert is working',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white70)),
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white70)),
                 const SizedBox(height: 18),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _RiskButton(label: 'Lock Door', icon: Icons.lock_rounded,
-                        color: const Color(0xFF2196F3), onTap: onLockDoor),
+                    _RiskButton(
+                        label: 'Lock Door',
+                        icon: Icons.lock_rounded,
+                        color: const Color(0xFF2196F3),
+                        onTap: onLockDoor),
                     const SizedBox(width: 12),
-                    _RiskButton(label: 'Call Emergency', icon: Icons.emergency_rounded,
-                        color: const Color(0xFFFF1744), onTap: onCallEmergency),
+                    _RiskButton(
+                        label: 'Call Emergency',
+                        icon: Icons.emergency_rounded,
+                        color: const Color(0xFFFF1744),
+                        onTap: onCallEmergency),
                   ],
                 ),
               ],
@@ -289,12 +315,13 @@ class _RiskCard extends StatelessWidget {
   }
 }
 
-// ── Face image ─────────────────────────────────────────────────────────────
+// ── Face image — FIX: replaced clipBehavior on Container with ClipRRect ────
 class _FaceImage extends StatelessWidget {
   final String imagePath;
   final double width;
   final double height;
-  const _FaceImage({required this.imagePath, required this.width, required this.height});
+  const _FaceImage(
+      {required this.imagePath, required this.width, required this.height});
 
   @override
   Widget build(BuildContext context) {
@@ -306,24 +333,35 @@ class _FaceImage extends StatelessWidget {
           height: height,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0xFFFF9800), width: 2.5),
+            border:
+                Border.all(color: const Color(0xFFFF9800), width: 2.5),
             color: Colors.black26,
           ),
-          clipBehavior: Clip.antiAlias,
-          child: Image.asset(imagePath, fit: BoxFit.cover,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.asset(
+              imagePath,
+              fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => Container(
                   color: const Color(0xFF1C2B38),
-                  child: const Icon(Icons.person, color: Colors.white38, size: 48))),
+                  child: const Icon(Icons.person,
+                      color: Colors.white38, size: 48)),
+            ),
+          ),
         ),
         Positioned(
           top: 6,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
             decoration: BoxDecoration(
                 color: Colors.black.withOpacity(0.55),
                 borderRadius: BorderRadius.circular(10)),
             child: const Text('Unknown',
-                style: TextStyle(color: Color(0xFFFF9800), fontSize: 11, fontWeight: FontWeight.w700)),
+                style: TextStyle(
+                    color: Color(0xFFFF9800),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700)),
           ),
         ),
       ],
@@ -337,8 +375,11 @@ class _NamingDialog extends StatefulWidget {
   final TextEditingController controller;
   final String initialRole;
   final void Function(String name, String role) onDone;
-  const _NamingDialog({required this.imagePath, required this.controller,
-      required this.initialRole, required this.onDone});
+  const _NamingDialog(
+      {required this.imagePath,
+      required this.controller,
+      required this.initialRole,
+      required this.onDone});
 
   @override
   State<_NamingDialog> createState() => _NamingDialogState();
@@ -355,38 +396,57 @@ class _NamingDialogState extends State<_NamingDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFF0D1820),
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
-        ),
-        padding: const EdgeInsets.fromLTRB(24, 28, 24, 28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('What is his Name?',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white)),
-            const SizedBox(height: 4),
-            const Text('Unknown',
-                style: TextStyle(fontSize: 13, color: Color(0xFFFF9800), fontWeight: FontWeight.w600)),
-            const SizedBox(height: 16),
-            _FaceImage(imagePath: widget.imagePath, width: 130, height: 145),
-            const SizedBox(height: 20),
+      insetPadding: EdgeInsets.fromLTRB(24, 24, 24, bottomInset + 24),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: screenHeight * 0.85),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF0D1820),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
+          ),
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 28),
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('What is his Name?',
+                    style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white)),
+                const SizedBox(height: 4),
+                const Text('Unknown',
+                    style: TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFFFF9800),
+                        fontWeight: FontWeight.w600)),
+                const SizedBox(height: 16),
+                _FaceImage(
+                    imagePath: widget.imagePath, width: 120, height: 130),
+                const SizedBox(height: 16),
             Container(
               height: 50,
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(30)),
+              decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30)),
               child: TextField(
                 controller: widget.controller,
-                style: const TextStyle(color: Colors.black87, fontSize: 15),
+                style:
+                    const TextStyle(color: Colors.black87, fontSize: 15),
                 decoration: const InputDecoration(
                   hintText: 'Name.....',
-                  hintStyle: TextStyle(color: Colors.black38, fontSize: 15),
+                  hintStyle:
+                      TextStyle(color: Colors.black38, fontSize: 15),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  contentPadding: EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 14),
                 ),
               ),
             ),
@@ -394,43 +454,62 @@ class _NamingDialogState extends State<_NamingDialog> {
             const Align(
               alignment: Alignment.centerLeft,
               child: Text('Add as:',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white60)),
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white60)),
             ),
             const SizedBox(height: 10),
             Row(
               children: [
-                Expanded(child: _RoleOption(
-                  label: 'Owner', icon: Icons.shield_rounded,
-                  selected: _selectedRole == 'Owner', color: const Color(0xFF6B8A9A),
+                Expanded(
+                    child: _RoleOption(
+                  label: 'Owner',
+                  icon: Icons.shield_rounded,
+                  selected: _selectedRole == 'Owner',
+                  color: const Color(0xFF6B8A9A),
                   onTap: () => setState(() => _selectedRole = 'Owner'),
                 )),
                 const SizedBox(width: 12),
-                Expanded(child: _RoleOption(
-                  label: 'Visitor', icon: Icons.person_outline_rounded,
-                  selected: _selectedRole == 'Visitor', color: const Color(0xFFFF9800),
+                Expanded(
+                    child: _RoleOption(
+                  label: 'Visitor',
+                  icon: Icons.person_outline_rounded,
+                  selected: _selectedRole == 'Visitor',
+                  color: const Color(0xFFFF9800),
                   onTap: () => setState(() => _selectedRole = 'Visitor'),
                 )),
               ],
             ),
             const SizedBox(height: 20),
             GestureDetector(
-              onTap: () => widget.onDone(widget.controller.text.trim(), _selectedRole),
+              onTap: () => widget.onDone(
+                  widget.controller.text.trim(), _selectedRole),
               child: Container(
                 width: double.infinity,
                 height: 50,
                 decoration: BoxDecoration(
                   gradient: AppColors.btnGradient,
                   borderRadius: BorderRadius.circular(30),
-                  boxShadow: [BoxShadow(
-                      color: const Color(0xFF080820).withOpacity(0.4),
-                      blurRadius: 12, offset: const Offset(0, 4))],
+                  boxShadow: [
+                    BoxShadow(
+                        color:
+                            const Color(0xFF080820).withOpacity(0.4),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4))
+                  ],
                 ),
                 alignment: Alignment.center,
                 child: const Text('Done',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white)),
               ),
             ),
-          ],
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -443,8 +522,12 @@ class _RoleOption extends StatelessWidget {
   final bool selected;
   final Color color;
   final VoidCallback onTap;
-  const _RoleOption({required this.label, required this.icon, required this.selected,
-      required this.color, required this.onTap});
+  const _RoleOption(
+      {required this.label,
+      required this.icon,
+      required this.selected,
+      required this.color,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -454,7 +537,9 @@ class _RoleOption extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: selected ? color.withOpacity(0.2) : Colors.white.withOpacity(0.05),
+          color: selected
+              ? color.withOpacity(0.2)
+              : Colors.white.withOpacity(0.05),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
               color: selected ? color : Colors.white.withOpacity(0.1),
@@ -463,10 +548,13 @@ class _RoleOption extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: selected ? color : Colors.white38, size: 26),
+            Icon(icon,
+                color: selected ? color : Colors.white38, size: 26),
             const SizedBox(height: 6),
             Text(label,
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700,
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
                     color: selected ? color : Colors.white38)),
           ],
         ),
@@ -485,7 +573,8 @@ class _ActionButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 100, height: 40,
+        width: 100,
+        height: 40,
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(30),
@@ -493,7 +582,10 @@ class _ActionButton extends StatelessWidget {
         ),
         alignment: Alignment.center,
         child: Text(label,
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white)),
+            style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Colors.white)),
       ),
     );
   }
@@ -504,14 +596,19 @@ class _RiskButton extends StatelessWidget {
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
-  const _RiskButton({required this.label, required this.icon, required this.color, required this.onTap});
+  const _RiskButton(
+      {required this.label,
+      required this.icon,
+      required this.color,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
           color: color.withOpacity(0.15),
           borderRadius: BorderRadius.circular(20),
@@ -522,7 +619,11 @@ class _RiskButton extends StatelessWidget {
           children: [
             Icon(icon, color: color, size: 15),
             const SizedBox(width: 6),
-            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color)),
+            Text(label,
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: color)),
           ],
         ),
       ),
@@ -535,7 +636,8 @@ class _ToastOverlay extends StatefulWidget {
   final String message;
   final IconData icon;
   final Color color;
-  const _ToastOverlay({required this.message, required this.icon, required this.color});
+  const _ToastOverlay(
+      {required this.message, required this.icon, required this.color});
 
   @override
   State<_ToastOverlay> createState() => _ToastOverlayState();
@@ -550,10 +652,13 @@ class _ToastOverlayState extends State<_ToastOverlay>
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 350));
-    _fade  = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
-    _slide = Tween<Offset>(begin: const Offset(0, -0.3), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 350));
+    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _slide =
+        Tween<Offset>(begin: const Offset(0, -0.3), end: Offset.zero)
+            .animate(
+                CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
     _ctrl.forward();
     Future.delayed(const Duration(milliseconds: 2200), () {
       if (mounted) _ctrl.reverse();
@@ -561,13 +666,17 @@ class _ToastOverlayState extends State<_ToastOverlay>
   }
 
   @override
-  void dispose() { _ctrl.dispose(); super.dispose(); }
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Positioned(
       top: MediaQuery.of(context).padding.top + 16,
-      left: 20, right: 20,
+      left: 20,
+      right: 20,
       child: SlideTransition(
         position: _slide,
         child: FadeTransition(
@@ -575,28 +684,43 @@ class _ToastOverlayState extends State<_ToastOverlay>
           child: Material(
             color: Colors.transparent,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 18, vertical: 14),
               decoration: BoxDecoration(
                 color: const Color(0xFF0D1820),
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: widget.color.withOpacity(0.5), width: 1.5),
+                border: Border.all(
+                    color: widget.color.withOpacity(0.5), width: 1.5),
                 boxShadow: [
-                  BoxShadow(color: widget.color.withOpacity(0.25), blurRadius: 20, offset: const Offset(0, 6)),
-                  BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 16, offset: const Offset(0, 4)),
+                  BoxShadow(
+                      color: widget.color.withOpacity(0.25),
+                      blurRadius: 20,
+                      offset: const Offset(0, 6)),
+                  BoxShadow(
+                      color: Colors.black.withOpacity(0.4),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4)),
                 ],
               ),
               child: Row(
                 children: [
                   Container(
-                    width: 38, height: 38,
+                    width: 38,
+                    height: 38,
                     decoration: BoxDecoration(
-                        color: widget.color.withOpacity(0.15), shape: BoxShape.circle),
-                    child: Icon(widget.icon, color: widget.color, size: 20),
+                        color: widget.color.withOpacity(0.15),
+                        shape: BoxShape.circle),
+                    child:
+                        Icon(widget.icon, color: widget.color, size: 20),
                   ),
                   const SizedBox(width: 12),
-                  Expanded(child: Text(widget.message,
-                      style: const TextStyle(color: Colors.white, fontSize: 14,
-                          fontWeight: FontWeight.w600, height: 1.3))),
+                  Expanded(
+                      child: Text(widget.message,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              height: 1.3))),
                 ],
               ),
             ),

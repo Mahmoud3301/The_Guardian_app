@@ -24,21 +24,21 @@ class _HomePageState extends State<HomePage> {
             // ── Top bar ────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 52,
-                    height: 52,
+                    width: 64,
+                    height: 64,
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(18),
                     ),
                     child: const Center(
-                      child: Text('🤖', style: TextStyle(fontSize: 28)),
+                      child: Text('🤖', style: TextStyle(fontSize: 34)),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(height: 10),
                   const Text(
                     'The Guardian',
                     style: TextStyle(
@@ -187,7 +187,7 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 12),
           _bullet('9:30'),
           const SizedBox(height: 8),
-          _bullet('Updates the  Database\nwith New Informtion'),
+          _bullet('Updates the Database\nwith New Information'),
         ],
       ),
     );
