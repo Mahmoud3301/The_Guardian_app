@@ -185,6 +185,7 @@
 
 
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/user_model.dart';
@@ -370,6 +371,14 @@ class AuthService {
     );
   }
 
+  /// Get the correct redirect URL based on platform
+  static String? _getRedirectUrl() {
+    if (kIsWeb) {
+      return Uri.base.origin; // e.g. http://localhost:8080
+    }
+    return 'io.supabase.theguardian://login-callback/';
+  }
+
   // ── GOOGLE SIGN IN (via Supabase OAuth) ──────────────────────────────────
   static Future<AuthResult> signInWithGoogle() async {
     try {
@@ -377,7 +386,7 @@ class AuthService {
 
       final res = await client.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: 'io.supabase.theguardian://login-callback/',
+        redirectTo: _getRedirectUrl(),
       );
 
       if (!res) {
@@ -428,7 +437,7 @@ class AuthService {
 
       final res = await client.auth.signInWithOAuth(
         OAuthProvider.apple,
-        redirectTo: 'io.supabase.theguardian://login-callback/',
+        redirectTo: _getRedirectUrl(),
       );
 
       if (!res) {

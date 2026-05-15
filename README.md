@@ -100,7 +100,7 @@ The backend server runs the AI models. **Run this on your laptop/PC before openi
 
 ```bash
 cd The_Guardian_app/flutter_application_1
-docker-compose up --build
+docker compose up --build
 ```
 
 > **Note:** The app automatically discovers the backend on the same WiFi network. No IP configuration needed!
@@ -234,7 +234,7 @@ New owners can be added by placing their photos in `person_photos/<name>/` direc
 
 ## 🔄 How to Use
 
-1. **Start the backend** on your laptop: `docker-compose up`
+1. **Start the backend** on your laptop: `docker compose up`
 2. **Connect** your phone to the **same WiFi** as the laptop
 3. **Open the app** on your phone
 4. The app **auto-discovers** the backend — no setup needed!
