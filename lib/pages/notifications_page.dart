@@ -66,13 +66,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
         ),
       );
     }
-    if (_notifications.isEmpty) {
-      _notifications.addAll([
-        _NotifEntry(id: '1', imagePath: 'assets/images/unknown1.jpeg'),
-        _NotifEntry(id: '2', imagePath: 'assets/images/unknown2.jpeg'),
-        _NotifEntry(id: '3', imagePath: 'assets/images/unknown3.jpeg'),
-      ]);
-    }
   }
 
   void _showToast(String message,
