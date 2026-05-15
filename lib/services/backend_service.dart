@@ -40,10 +40,8 @@ class BackendService {
       final pageHost = Uri.base.host;
       return pageHost.isNotEmpty ? pageHost : 'localhost';
     }
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      return '10.0.2.2';
-    }
-    return 'localhost';
+    // On mobile: return empty — forces checkHealth() to run discovery
+    return '';
   }
 
   String get port => _envPort;

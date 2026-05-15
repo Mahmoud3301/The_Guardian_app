@@ -1,7 +1,6 @@
 // lib/services/auth_service.dart
 // Authentication service — local SharedPreferences + Supabase OAuth.
 
-
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
