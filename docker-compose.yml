@@ -1,8 +1,7 @@
 services:
   guardian-backend:
     build: ./docker
-    ports:
-      - "8000:8000"
+    network_mode: host
     volumes:
       - ./person_photos:/app/person_photos
       - ./models:/app/custom_models

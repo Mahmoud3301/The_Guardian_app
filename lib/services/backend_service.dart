@@ -1,10 +1,10 @@
 // lib/services/backend_service.dart
-// Centralised backend communication — HTTP + mDNS auto-discovery.
-// Uses NSD (Network Service Discovery) on Android to find the backend
-// automatically via _guardian._tcp mDNS service.
-// Falls back to Supabase when the Docker backend is unreachable.
+// Centralised backend communication — HTTP + automatic network discovery.
+// Automatically scans the local WiFi subnet to find the Guardian backend.
+// No manual IP configuration needed — just be on the same network!
 
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -19,29 +19,26 @@ class BackendService {
   static const String _envPort =
       String.fromEnvironment('BACKEND_PORT', defaultValue: '8000');
 
-  bool _backendAvailable = true;
+  bool _backendAvailable = false;
   DateTime? _lastHealthCheck;
 
-  // mDNS discovered host (set by discovery)
+  // Auto-discovered host
   String? _discoveredHost;
-  bool _discoveryAttempted = false;
+  bool _discovering = false;
 
-  /// Resolve backend host with mDNS fallback chain.
+  /// Resolve backend host — uses discovered IP from network scan.
   String get host {
-    // 1. Explicit environment override
     if (_envHost.isNotEmpty) return _envHost;
-
-    // 2. mDNS discovered host
     if (_discoveredHost != null && _discoveredHost!.isNotEmpty) {
       return _discoveredHost!;
     }
-
-    // 3. Platform defaults
     if (kIsWeb) {
       final pageHost = Uri.base.host;
       return pageHost.isNotEmpty ? pageHost : 'localhost';
     }
-    if (defaultTargetPlatform == TargetPlatform.android) return '10.0.2.2';
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return '10.0.2.2';
+    }
     return 'localhost';
   }
 
@@ -49,62 +46,139 @@ class BackendService {
   String get httpBase => 'http://$host:$port';
   Uri get wsUri => Uri.parse('ws://$host:$port/ws');
 
-  /// Try to discover the backend via mDNS.
-  /// On Android, uses multicast DNS to find _guardian._tcp service.
-  Future<void> discoverBackend() async {
-    if (_discoveryAttempted && _discoveredHost != null) return;
-    _discoveryAttempted = true;
-
-    // Try common local hostnames first
-    final candidates = <String>[
-      'guardian-backend.local', // mDNS hostname
-    ];
-
-    // On Android, also try common LAN patterns
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      candidates.addAll([
-        '10.0.2.2', // Android emulator → host
-        '192.168.1.100',
-        '192.168.1.2',
-        '192.168.0.100',
-        '192.168.0.2',
-      ]);
-    }
-
-    // Try each candidate
-    for (final candidate in candidates) {
-      try {
-        final resp = await http
-            .get(Uri.parse('http://$candidate:$_envPort/health'))
-            .timeout(const Duration(seconds: 2));
-        if (resp.statusCode == 200) {
-          _discoveredHost = candidate;
-          _backendAvailable = true;
-          _lastHealthCheck = DateTime.now();
-          debugPrint('[BackendService] ✅ Discovered backend at $candidate');
-          return;
+  /// Get the device's local IP to determine the subnet.
+  Future<String?> _getLocalIp() async {
+    if (kIsWeb) return null;
+    try {
+      final interfaces = await NetworkInterface.list(
+        type: InternetAddressType.IPv4,
+        includeLoopback: false,
+      );
+      for (final iface in interfaces) {
+        for (final addr in iface.addresses) {
+          final ip = addr.address;
+          if (ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.')) {
+            return ip;
+          }
         }
-      } catch (_) {
-        // Try next candidate
+      }
+    } catch (e) {
+      debugPrint('[BackendService] Could not get local IP: $e');
+    }
+    return null;
+  }
+
+  /// Scan the local subnet to find the Guardian backend automatically.
+  Future<void> discoverBackend() async {
+    if (_discovering) return;
+    _discovering = true;
+    debugPrint('[BackendService] 🔍 Starting network discovery...');
+
+    // Priority 1: Try explicit env host
+    if (_envHost.isNotEmpty) {
+      if (await _tryHost(_envHost)) {
+        _discovering = false;
+        return;
       }
     }
 
-    debugPrint('[BackendService] ⚠ mDNS discovery found no backend');
+    // Priority 2: Try mDNS hostname
+    if (await _tryHost('guardian-backend.local')) {
+      _discovering = false;
+      return;
+    }
+
+    // Priority 3: Try localhost / emulator host
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      if (await _tryHost('10.0.2.2')) {
+        _discovering = false;
+        return;
+      }
+    }
+    if (await _tryHost('localhost')) {
+      _discovering = false;
+      return;
+    }
+
+    // Priority 4: Scan the local subnet
+    final localIp = await _getLocalIp();
+    if (localIp != null) {
+      final parts = localIp.split('.');
+      if (parts.length == 4) {
+        final subnet = '${parts[0]}.${parts[1]}.${parts[2]}';
+        debugPrint('[BackendService] 🔍 Scanning subnet $subnet.0/24...');
+
+        // Scan in parallel batches for speed
+        final futures = <Future<bool>>[];
+        for (int i = 1; i <= 254; i++) {
+          final candidateIp = '$subnet.$i';
+          if (candidateIp == localIp) continue; // Skip self
+          futures.add(_tryHost(candidateIp, timeout: 1));
+        }
+
+        // Wait for first success or all failures
+        final completer = Completer<void>();
+        int completed = 0;
+        for (final future in futures) {
+          future.then((found) {
+            completed++;
+            if (found && !completer.isCompleted) {
+              completer.complete();
+            } else if (completed >= futures.length && !completer.isCompleted) {
+              completer.complete();
+            }
+          });
+        }
+
+        // Wait max 5 seconds for subnet scan
+        await completer.future.timeout(
+          const Duration(seconds: 5),
+          onTimeout: () {},
+        );
+      }
+    }
+
+    _discovering = false;
+    if (_discoveredHost != null) {
+      debugPrint('[BackendService] ✅ Found backend at $_discoveredHost');
+    } else {
+      debugPrint('[BackendService] ⚠ No backend found on network');
+    }
+  }
+
+  /// Try to reach a specific host.
+  Future<bool> _tryHost(String candidate, {int timeout = 2}) async {
+    if (_discoveredHost != null) return false; // Already found
+    try {
+      final resp = await http
+          .get(Uri.parse('http://$candidate:$_envPort/health'))
+          .timeout(Duration(seconds: timeout));
+      if (resp.statusCode == 200) {
+        _discoveredHost = candidate;
+        _backendAvailable = true;
+        _lastHealthCheck = DateTime.now();
+        debugPrint('[BackendService] ✅ Backend found at $candidate');
+        return true;
+      }
+    } catch (_) {}
+    return false;
   }
 
   /// Check if Docker backend is reachable.
   Future<bool> checkHealth() async {
-    // Try mDNS discovery first
-    if (!_discoveryAttempted) {
+    // Auto-discover on first check
+    if (_discoveredHost == null) {
       await discoverBackend();
       if (_backendAvailable) return true;
     }
 
-    // Only check once every 30 seconds to avoid spamming
+    // Cache health checks for 30 seconds
     if (_lastHealthCheck != null &&
-        DateTime.now().difference(_lastHealthCheck!) < const Duration(seconds: 30)) {
+        DateTime.now().difference(_lastHealthCheck!) <
+            const Duration(seconds: 30)) {
       return _backendAvailable;
     }
+
     try {
       final resp = await http
           .get(Uri.parse('$httpBase/health'))
@@ -112,30 +186,27 @@ class BackendService {
       _backendAvailable = resp.statusCode == 200;
     } catch (_) {
       _backendAvailable = false;
-      // If health check fails, retry discovery
-      _discoveryAttempted = false;
+      // Reset discovery to try again
+      _discoveredHost = null;
     }
     _lastHealthCheck = DateTime.now();
     debugPrint('[BackendService] health: $_backendAvailable (host: $host)');
     return _backendAvailable;
   }
 
-  /// Whether the Docker backend is currently considered reachable.
   bool get isBackendAvailable => _backendAvailable;
 
-  /// Force re-discovery of backend on next health check.
+  /// Force re-discovery.
   void resetDiscovery() {
-    _discoveryAttempted = false;
     _discoveredHost = null;
+    _backendAvailable = false;
     _lastHealthCheck = null;
+    _discovering = false;
   }
 
-  /// Register a face — try Docker backend first, fall back to Supabase.
+  /// Register a face — Docker first, Supabase fallback.
   Future<bool> addFace(String name, Uint8List imageBytes) async {
-    // 1) Try Docker backend
     if (await _tryBackendAddFace(name, imageBytes)) return true;
-
-    // 2) Fall back to Supabase Storage
     return _supabaseFallbackAddFace(name, imageBytes);
   }
 
