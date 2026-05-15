@@ -14,10 +14,14 @@ class BackendService {
   BackendService._();
   static final BackendService instance = BackendService._();
 
-  static const String _envHost =
-      String.fromEnvironment('BACKEND_HOST', defaultValue: '');
-  static const String _envPort =
-      String.fromEnvironment('BACKEND_PORT', defaultValue: '8000');
+  static const String _envHost = String.fromEnvironment(
+    'BACKEND_HOST',
+    defaultValue: '',
+  );
+  static const String _envPort = String.fromEnvironment(
+    'BACKEND_PORT',
+    defaultValue: '8000',
+  );
 
   bool _backendAvailable = false;
   DateTime? _lastHealthCheck;
@@ -57,7 +61,9 @@ class BackendService {
       for (final iface in interfaces) {
         for (final addr in iface.addresses) {
           final ip = addr.address;
-          if (ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.')) {
+          if (ip.startsWith('192.168.') ||
+              ip.startsWith('10.') ||
+              ip.startsWith('172.')) {
             return ip;
           }
         }
@@ -220,8 +226,9 @@ class BackendService {
       request.files.add(
         http.MultipartFile.fromBytes('file', imageBytes, filename: 'face.jpg'),
       );
-      final response =
-          await request.send().timeout(const Duration(seconds: 15));
+      final response = await request.send().timeout(
+        const Duration(seconds: 15),
+      );
       if (response.statusCode == 200) {
         debugPrint('[BackendService] addFace via Docker OK');
         return true;
@@ -233,10 +240,14 @@ class BackendService {
   }
 
   Future<bool> _supabaseFallbackAddFace(
-      String name, Uint8List imageBytes) async {
+    String name,
+    Uint8List imageBytes,
+  ) async {
     try {
-      final url =
-          await SupabaseService.instance.uploadFacePhoto(name, imageBytes);
+      final url = await SupabaseService.instance.uploadFacePhoto(
+        name,
+        imageBytes,
+      );
       if (url != null) {
         debugPrint('[BackendService] addFace via Supabase OK');
         return true;
