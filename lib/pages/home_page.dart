@@ -15,7 +15,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  bool _isArmed = true;
+  bool _serverOn = false;
+  bool _cameraOn = false;
   bool _backendOnline = false;
   bool _checkingStatus = true;
   int _knownFaces = 0;
@@ -30,9 +31,40 @@ class _HomePageState extends State<HomePage> {
     setState(() => _checkingStatus = true);
     try {
       _backendOnline = await BackendService.instance.checkHealth();
+      _serverOn = _backendOnline;
       _knownFaces = SupabaseService.instance.nameCount;
     } catch (_) {}
     if (mounted) setState(() => _checkingStatus = false);
+  }
+
+  Future<void> _toggleServer(bool value) async {
+    setState(() => _serverOn = value);
+    if (value) {
+      // Try to connect to backend
+      final online = await BackendService.instance.checkHealth();
+      if (mounted) {
+        setState(() {
+          _backendOnline = online;
+          _serverOn = online;
+        });
+        if (!online) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('⚠ Server not found. Make sure docker-compose is running.'),
+              backgroundColor: const Color(0xFFFF5722),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
+      }
+    } else {
+      setState(() => _backendOnline = false);
+    }
+  }
+
+  void _toggleCamera(bool value) {
+    setState(() => _cameraOn = value);
   }
 
   @override
@@ -100,7 +132,29 @@ class _HomePageState extends State<HomePage> {
                   padding: const EdgeInsets.fromLTRB(20, 28, 20, 28),
                   child: Column(
                     children: [
-                      _buildToggleSwitch(),
+                      // ── Server ON/OFF ──────────────────────────
+                      _buildControlToggle(
+                        label: 'Server',
+                        icon: Icons.dns_rounded,
+                        isOn: _serverOn,
+                        onChanged: _toggleServer,
+                        statusText: _serverOn ? 'Online' : 'Offline',
+                        statusColor: _serverOn
+                            ? const Color(0xFF2ecc71)
+                            : const Color(0xFFFF5722),
+                      ),
+                      const SizedBox(height: 14),
+                      // ── Camera ON/OFF ──────────────────────────
+                      _buildControlToggle(
+                        label: 'Camera',
+                        icon: Icons.videocam_rounded,
+                        isOn: _cameraOn,
+                        onChanged: (v) => _toggleCamera(v),
+                        statusText: _cameraOn ? 'Active' : 'Off',
+                        statusColor: _cameraOn
+                            ? const Color(0xFF2ecc71)
+                            : const Color(0xFFFF5722),
+                      ),
                       const SizedBox(height: 20),
                       _buildStatusCard(),
                       const SizedBox(height: 14),
@@ -127,50 +181,99 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildToggleSwitch() {
-    return GestureDetector(
-      onTap: () => setState(() => _isArmed = !_isArmed),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 18),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.07),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: Colors.white.withOpacity(0.08)),
+  /// ON/OFF control toggle for Server / Camera
+  Widget _buildControlToggle({
+    required String label,
+    required IconData icon,
+    required bool isOn,
+    required ValueChanged<bool> onChanged,
+    required String statusText,
+    required Color statusColor,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.07),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: isOn
+              ? const Color(0xFF2ecc71).withOpacity(0.3)
+              : Colors.white.withOpacity(0.08),
         ),
-        child: Center(
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            width: 64,
-            height: 34,
+      ),
+      child: Row(
+        children: [
+          // Icon
+          Container(
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(17),
-              gradient: _isArmed
-                  ? const LinearGradient(
-                      colors: [Color(0xFF6B8A9A), Color(0xFF2A3F50)],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    )
-                  : null,
-              color: _isArmed ? null : const Color(0xFF2E3E4A),
+              color: statusColor.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: AnimatedAlign(
+            child: Icon(icon, color: statusColor, size: 22),
+          ),
+          const SizedBox(width: 14),
+          // Label + Status
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  statusText,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: statusColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Toggle switch
+          GestureDetector(
+            onTap: () => onChanged(!isOn),
+            child: AnimatedContainer(
               duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              alignment:
-                  _isArmed ? Alignment.centerRight : Alignment.centerLeft,
-              child: Container(
-                margin: const EdgeInsets.all(4),
-                width: 26,
-                height: 26,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white,
+              width: 56,
+              height: 30,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
+                gradient: isOn
+                    ? const LinearGradient(
+                        colors: [Color(0xFF2ecc71), Color(0xFF27ae60)],
+                      )
+                    : null,
+                color: isOn ? null : const Color(0xFF2E3E4A),
+              ),
+              child: AnimatedAlign(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                alignment:
+                    isOn ? Alignment.centerRight : Alignment.centerLeft,
+                child: Container(
+                  margin: const EdgeInsets.all(3),
+                  width: 24,
+                  height: 24,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

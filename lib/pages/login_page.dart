@@ -66,6 +66,44 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Future<void> _signInWithGoogle() async {
+    setState(() => _loading = true);
+    final result = await AuthService.signInWithGoogle();
+    if (!mounted) return;
+    setState(() => _loading = false);
+    if (result.success) {
+      showGuardianSnackBar(context, result.message);
+      await Future.delayed(const Duration(milliseconds: 800));
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => HomePage(user: result.user!)),
+        (route) => false,
+      );
+    } else {
+      showGuardianSnackBar(context, result.message, isError: true);
+    }
+  }
+
+  Future<void> _signInWithApple() async {
+    setState(() => _loading = true);
+    final result = await AuthService.signInWithApple();
+    if (!mounted) return;
+    setState(() => _loading = false);
+    if (result.success) {
+      showGuardianSnackBar(context, result.message);
+      await Future.delayed(const Duration(milliseconds: 800));
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => HomePage(user: result.user!)),
+        (route) => false,
+      );
+    } else {
+      showGuardianSnackBar(context, result.message, isError: true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GradientScaffold(
@@ -215,7 +253,10 @@ class _LoginPageState extends State<LoginPage> {
                         const SizedBox(height: 26),
                         const LabelDivider(text: 'Sign in with'),
                         const SizedBox(height: 22),
-                        const SocialRow(),
+                        SocialRow(
+                          onGoogle: _signInWithGoogle,
+                          onApple: _signInWithApple,
+                        ),
 
                         // ── Sign Up link ───────────────────────────
                         const SizedBox(height: 28),

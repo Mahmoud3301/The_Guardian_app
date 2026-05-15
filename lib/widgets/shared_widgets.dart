@@ -293,72 +293,71 @@ class LabelDivider extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SOCIAL ICONS ROW
+// SOCIAL ICONS ROW — Google + Apple only
 // ─────────────────────────────────────────────────────────────────────────────
 class SocialRow extends StatelessWidget {
-  const SocialRow({super.key});
+  final VoidCallback? onGoogle;
+  final VoidCallback? onApple;
+  const SocialRow({super.key, this.onGoogle, this.onApple});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _SocialCircle(
-          color: AppColors.facebook,
-          child: const Text(
-            'f',
-            style: TextStyle(
+        // Google
+        GestureDetector(
+          onTap: onGoogle,
+          child: Container(
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
               color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'serif',
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.25),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: const Center(
+              child: Text(
+                'G',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF4285F4),
+                ),
+              ),
             ),
           ),
         ),
         const SizedBox(width: 28),
-        _SocialCircle(
-          color: Colors.white,
-          child: const Text(
-            'G',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF4285F4),
+        // Apple
+        GestureDetector(
+          onTap: onApple,
+          child: Container(
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.black,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.25),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: const Center(
+              child: Icon(Icons.apple, color: Colors.white, size: 26),
             ),
           ),
-        ),
-        const SizedBox(width: 28),
-        _SocialCircle(
-          color: Colors.black,
-          child: const Icon(Icons.apple, color: Colors.white, size: 26),
         ),
       ],
-    );
-  }
-}
-
-class _SocialCircle extends StatelessWidget {
-  final Color color;
-  final Widget child;
-  const _SocialCircle({required this.color, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 54,
-      height: 54,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.25),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Center(child: child),
     );
   }
 }

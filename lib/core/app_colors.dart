@@ -45,7 +45,7 @@ class AppColors {
   static const Color error = Color(0xFFCC3333);
 
   // ── Social icons ────────────────────────────────────────────────────────────
-  static const Color facebook = Color(0xFF1877F2);
+  static const Color google   = Color(0xFF4285F4);
   static const Color apple    = Color(0xFF000000);
 
   // ── Background gradient ──────────────────────────────────────────────────────

@@ -70,6 +70,44 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
     }
   }
 
+  Future<void> _signUpWithGoogle() async {
+    setState(() => _loading = true);
+    final result = await AuthService.signInWithGoogle();
+    if (!mounted) return;
+    setState(() => _loading = false);
+    if (result.success) {
+      showGuardianSnackBar(context, result.message);
+      await Future.delayed(const Duration(milliseconds: 800));
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => HomePage(user: result.user!)),
+        (route) => false,
+      );
+    } else {
+      showGuardianSnackBar(context, result.message, isError: true);
+    }
+  }
+
+  Future<void> _signUpWithApple() async {
+    setState(() => _loading = true);
+    final result = await AuthService.signInWithApple();
+    if (!mounted) return;
+    setState(() => _loading = false);
+    if (result.success) {
+      showGuardianSnackBar(context, result.message);
+      await Future.delayed(const Duration(milliseconds: 800));
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => HomePage(user: result.user!)),
+        (route) => false,
+      );
+    } else {
+      showGuardianSnackBar(context, result.message, isError: true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GradientScaffold(
@@ -184,7 +222,10 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                         const SizedBox(height: 26),
                         const LabelDivider(text: 'Sign up with'),
                         const SizedBox(height: 22),
-                        const SocialRow(),
+                        SocialRow(
+                          onGoogle: _signUpWithGoogle,
+                          onApple: _signUpWithApple,
+                        ),
 
                         // ── Log In link ────────────────────────────
                         const SizedBox(height: 28),
