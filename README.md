@@ -262,6 +262,4 @@ This project is developed for educational purposes.
 
 ---
 
-<p align="center">
-  Made with ❤️ by <strong>Mahmoud, Mina & Mohab</strong>
-</p>
+
