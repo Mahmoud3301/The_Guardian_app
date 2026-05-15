@@ -50,10 +50,14 @@ class _HomePageState extends State<HomePage> {
         if (!online) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('⚠ Server not found. Make sure docker-compose is running.'),
+              content: const Text(
+                '⚠ Server not found. Make sure docker-compose is running.',
+              ),
               backgroundColor: const Color(0xFFFF5722),
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           );
         }
@@ -159,12 +163,14 @@ class _HomePageState extends State<HomePage> {
                       _buildStatusCard(),
                       const SizedBox(height: 14),
                       _buildInfoCard(
-                          label: 'Battery Health',
-                          icon: Icons.battery_full_rounded),
+                        label: 'Battery Health',
+                        icon: Icons.battery_full_rounded,
+                      ),
                       const SizedBox(height: 14),
                       _buildInfoCard(
-                          label: 'Connection',
-                          icon: Icons.wifi_rounded),
+                        label: 'Connection',
+                        icon: Icons.wifi_rounded,
+                      ),
                       const SizedBox(height: 14),
                       _buildBackupCard(),
                     ],
@@ -259,8 +265,7 @@ class _HomePageState extends State<HomePage> {
               child: AnimatedAlign(
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
-                alignment:
-                    isOn ? Alignment.centerRight : Alignment.centerLeft,
+                alignment: isOn ? Alignment.centerRight : Alignment.centerLeft,
                 child: Container(
                   margin: const EdgeInsets.all(3),
                   width: 24,
@@ -310,10 +315,15 @@ class _HomePageState extends State<HomePage> {
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
-                            color: Colors.white54, strokeWidth: 2),
+                          color: Colors.white54,
+                          strokeWidth: 2,
+                        ),
                       )
-                    : const Icon(Icons.refresh_rounded,
-                        color: Colors.white54, size: 22),
+                    : const Icon(
+                        Icons.refresh_rounded,
+                        color: Colors.white54,
+                        size: 22,
+                      ),
               ),
             ],
           ),
@@ -321,9 +331,7 @@ class _HomePageState extends State<HomePage> {
 
           // Backend status
           _statusRow(
-            icon: _backendOnline
-                ? Icons.dns_rounded
-                : Icons.cloud_off_rounded,
+            icon: _backendOnline ? Icons.dns_rounded : Icons.cloud_off_rounded,
             label: 'Docker Backend',
             value: _backendOnline ? 'Online' : 'Offline',
             color: _backendOnline
@@ -468,16 +476,24 @@ class _HomePageState extends State<HomePage> {
       children: [
         const Padding(
           padding: EdgeInsets.only(top: 4, right: 10),
-          child: Text('•',
-              style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white70,
-                  fontWeight: FontWeight.w900)),
+          child: Text(
+            '•',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.white70,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
         ),
         Expanded(
-          child: Text(text,
-              style: const TextStyle(
-                  fontSize: 15, color: Colors.white70, height: 1.4)),
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 15,
+              color: Colors.white70,
+              height: 1.4,
+            ),
+          ),
         ),
       ],
     );

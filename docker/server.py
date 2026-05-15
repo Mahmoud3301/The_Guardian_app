@@ -415,7 +415,7 @@ def process_frame(img_bytes: bytes) -> dict:
 
             # Draw face bounding box
             cv2.rectangle(annotated, (left, top), (right, bottom), color, 2)
-            txt = f"{detected_name}" + (f" ({distance_val:.2f})" if distance_val else "")
+            txt = f"{detected_name}"
             (tw, th), _ = cv2.getTextSize(txt, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
             cv2.rectangle(annotated, (left, top - th - 10), (left + tw + 4, top), color, -1)
             cv2.putText(annotated, txt, (left + 2, top - 5),
@@ -460,7 +460,7 @@ def process_frame(img_bytes: bytes) -> dict:
 
                 color = COLORS["general"]
                 cv2.rectangle(annotated, (x1, y1), (x2, y2), color, 2)
-                txt = f"{label} {conf:.0%}"
+                txt = f"{label}"
                 (tw, th), _ = cv2.getTextSize(txt, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
                 cv2.rectangle(annotated, (x1, y1 - th - 6), (x1 + tw + 4, y1), color, -1)
                 cv2.putText(annotated, txt, (x1 + 2, y1 - 4),
@@ -523,7 +523,7 @@ def process_frame(img_bytes: bytes) -> dict:
                         risk_detected = True
 
                 cv2.rectangle(annotated, (x1, y1), (x2, y2), color, thickness)
-                txt = f"[{status}] {label} {conf:.0%}"
+                txt = f"[{status}] {label}"
                 (tw, th), _ = cv2.getTextSize(txt, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
                 cv2.rectangle(annotated, (x1, y1 - th - 6), (x1 + tw + 4, y1), color, -1)
                 fg_color = (0, 0, 0) if status == "SAFE" else (255, 255, 255)
@@ -598,7 +598,7 @@ def process_frame(img_bytes: bytes) -> dict:
 
                 cv2.rectangle(annotated, (x1, y1), (x2, y2), color, thickness)
                 icon = "✓" if status == "SAFE" else "⚠"
-                txt = f"{icon} {status}: {label} {conf:.0%}"
+                txt = f"{icon} {status}: {label}"
                 (tw, th), _ = cv2.getTextSize(txt, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
                 cv2.rectangle(annotated, (x1, y1 - th - 8), (x1 + tw + 4, y1), color, -1)
                 fg_color = (0, 0, 0) if status == "SAFE" else (255, 255, 255)
