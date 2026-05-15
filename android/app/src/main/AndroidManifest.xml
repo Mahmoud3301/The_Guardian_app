@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <application
         android:usesCleartextTraffic="true"
-        android:label="flutter_application_1"
+        android:label="The Guardian"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

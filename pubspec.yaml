@@ -53,6 +53,14 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/robot.png"
+  adaptive_icon_background: "#0D1820"
+  adaptive_icon_foreground: "assets/images/robot.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -68,6 +76,9 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/robot.png
+    - assets/images/mahmoud.jpeg
+    - assets/images/mina.jpeg
+    - assets/images/mohab.jpeg
     - assets/images/person1.jpeg
     - assets/images/person2.jpeg
     - assets/images/person3.jpeg

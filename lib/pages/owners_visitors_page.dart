@@ -87,8 +87,11 @@ class _OwnersVisitorsPageState extends State<OwnersVisitorsPage> {
                                 strokeWidth: 2,
                               ),
                             )
-                          : const Icon(Icons.sync_rounded,
-                              color: Colors.white70, size: 22),
+                          : const Icon(
+                              Icons.sync_rounded,
+                              color: Colors.white70,
+                              size: 22,
+                            ),
                     ),
                   ),
                 ],
@@ -99,13 +102,16 @@ class _OwnersVisitorsPageState extends State<OwnersVisitorsPage> {
             if (_syncing)
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF6B8A9A).withOpacity(0.12),
                   borderRadius: BorderRadius.circular(14),
-                  border:
-                      Border.all(color: const Color(0xFF6B8A9A).withOpacity(0.3)),
+                  border: Border.all(
+                    color: const Color(0xFF6B8A9A).withOpacity(0.3),
+                  ),
                 ),
                 child: Row(
                   children: const [
@@ -144,10 +150,12 @@ class _OwnersVisitorsPageState extends State<OwnersVisitorsPage> {
                       color: const Color(0xFF6B8A9A),
                     ),
                     const SizedBox(height: 10),
-                    ..._owners.map((p) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _PersonCard(person: p),
-                        )),
+                    ..._owners.map(
+                      (p) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _PersonCard(person: p),
+                      ),
+                    ),
                   ],
 
                   if (_visitors.isNotEmpty) ...[
@@ -158,10 +166,12 @@ class _OwnersVisitorsPageState extends State<OwnersVisitorsPage> {
                       color: const Color(0xFFFF9800),
                     ),
                     const SizedBox(height: 10),
-                    ..._visitors.map((p) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _PersonCard(person: p),
-                        )),
+                    ..._visitors.map(
+                      (p) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _PersonCard(person: p),
+                      ),
+                    ),
                   ],
 
                   if (_risks.isNotEmpty) ...[
@@ -172,22 +182,25 @@ class _OwnersVisitorsPageState extends State<OwnersVisitorsPage> {
                       color: const Color(0xFFFF1744),
                     ),
                     const SizedBox(height: 10),
-                    ..._risks.asMap().entries.map((e) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _RiskPersonCard(
-                            record: e.value,
-                            index: e.key + 1,
-                          ),
-                        )),
+                    ..._risks.asMap().entries.map(
+                      (e) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _RiskPersonCard(
+                          record: e.value,
+                          index: e.key + 1,
+                        ),
+                      ),
+                    ),
                   ],
 
                   if (_owners.isEmpty && _visitors.isEmpty && _risks.isEmpty)
                     const Center(
                       child: Padding(
                         padding: EdgeInsets.only(top: 60),
-                        child: Text('No people added yet.',
-                            style: TextStyle(
-                                color: Colors.white38, fontSize: 16)),
+                        child: Text(
+                          'No people added yet.',
+                          style: TextStyle(color: Colors.white38, fontSize: 16),
+                        ),
                       ),
                     ),
                 ],
@@ -201,8 +214,11 @@ class _OwnersVisitorsPageState extends State<OwnersVisitorsPage> {
     );
   }
 
-  Widget _sectionHeader(
-      {required String label, required IconData icon, required Color color}) {
+  Widget _sectionHeader({
+    required String label,
+    required IconData icon,
+    required Color color,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
@@ -237,8 +253,9 @@ class _PersonCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isOwner = person.role == 'Owner';
-    final roleColor =
-        isOwner ? const Color(0xFF6B8A9A) : const Color(0xFFFF9800);
+    final roleColor = isOwner
+        ? const Color(0xFF6B8A9A)
+        : const Color(0xFFFF9800);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -255,8 +272,7 @@ class _PersonCard extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.white.withOpacity(0.1),
-              border: Border.all(
-                  color: roleColor.withOpacity(0.4), width: 2),
+              border: Border.all(color: roleColor.withOpacity(0.4), width: 2),
             ),
             clipBehavior: Clip.antiAlias,
             child: _buildAvatar(person, roleColor, isOwner),
@@ -272,9 +288,10 @@ class _PersonCard extends StatelessWidget {
                 Text(
                   person.name,
                   style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white),
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
                 ),
                 if (person.networkUrl != null)
                   Row(
@@ -304,8 +321,7 @@ class _PersonCard extends StatelessWidget {
 
           // Role badge
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
               color: roleColor.withOpacity(0.12),
               borderRadius: BorderRadius.circular(20),
@@ -390,10 +406,12 @@ class _RiskPersonCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isEmergency = record.action == 'Call Emergency';
-    final actionColor =
-        isEmergency ? const Color(0xFFFF1744) : const Color(0xFF2196F3);
-    final actionIcon =
-        isEmergency ? Icons.emergency_rounded : Icons.lock_rounded;
+    final actionColor = isEmergency
+        ? const Color(0xFFFF1744)
+        : const Color(0xFF2196F3);
+    final actionIcon = isEmergency
+        ? Icons.emergency_rounded
+        : Icons.lock_rounded;
 
     final h = record.time;
     final timeStr =
@@ -431,16 +449,18 @@ class _RiskPersonCard extends StatelessWidget {
                 Text(
                   'Unknown #$index',
                   style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   timeStr,
                   style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.white.withOpacity(0.4)),
+                    fontSize: 11,
+                    color: Colors.white.withOpacity(0.4),
+                  ),
                 ),
               ],
             ),
@@ -448,8 +468,7 @@ class _RiskPersonCard extends StatelessWidget {
 
           // Action badge
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: actionColor.withOpacity(0.12),
               borderRadius: BorderRadius.circular(16),
@@ -463,9 +482,10 @@ class _RiskPersonCard extends StatelessWidget {
                 Text(
                   record.action,
                   style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: actionColor),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: actionColor,
+                  ),
                 ),
               ],
             ),

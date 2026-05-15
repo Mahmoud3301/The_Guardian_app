@@ -2,6 +2,7 @@
 // Shared singleton — holds known people and risk people across pages.
 // Now syncs with Supabase Storage so photos show from cloud,
 // and falls back to bundled assets when network is unavailable.
+// Uses real photos for owners: Mahmoud, Mohab, Mina.
 
 import 'dart:typed_data';
 import '../services/supabase_service.dart';
@@ -42,13 +43,11 @@ class PersonStore {
 
   bool _supabaseSynced = false;
 
-  // Pre-seeded known people (assets fallback)
+  // Pre-seeded known people with REAL photos for owners
   final List<PersonRecord> people = [
-    const PersonRecord(name: 'Mahmoud', role: 'Owner',   imagePath: 'assets/images/person1.jpeg'),
-    const PersonRecord(name: 'Mohab',   role: 'Owner',   imagePath: 'assets/images/person2.jpeg'),
-    const PersonRecord(name: 'Mina',    role: 'Owner',   imagePath: 'assets/images/person3.jpeg'),
-    const PersonRecord(name: 'Ali',     role: 'Owner',   imagePath: 'assets/images/person4.jpeg'),
-    const PersonRecord(name: 'Amr',     role: 'Visitor', imagePath: 'assets/images/person5.jpeg'),
+    const PersonRecord(name: 'Mahmoud', role: 'Owner',   imagePath: 'assets/images/mahmoud.jpeg'),
+    const PersonRecord(name: 'Mohab',   role: 'Owner',   imagePath: 'assets/images/mohab.jpeg'),
+    const PersonRecord(name: 'Mina',    role: 'Owner',   imagePath: 'assets/images/mina.jpeg'),
   ];
 
   final List<RiskRecord> riskPeople = [];

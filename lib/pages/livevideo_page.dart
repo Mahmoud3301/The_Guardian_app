@@ -252,23 +252,40 @@ class _LiveVideoPageState extends State<LiveVideoPage> {
         final name = decoded['name']?.toString();
         final distance = decoded['distance'] as num?;
         final riskDetected = decoded['risk_detected'] == true;
+        final ownerInFrame = decoded['owner_in_frame'] == true;
+        final isOwner = decoded['is_owner'] == true;
 
-        _recognitionLabel =
-            label ??
-            (isKnown == null
-                ? 'Waiting recognition...'
-                : (isKnown ? 'Known' : 'Unknown'));
+        // Build a more informative label
+        String displayLabel;
+        if (label != null) {
+          displayLabel = label;
+          if (isOwner) {
+            displayLabel += ' (Owner)';
+          }
+        } else if (isKnown == null) {
+          displayLabel = 'Waiting recognition...';
+        } else {
+          displayLabel = isKnown ? 'Known' : 'Unknown';
+        }
+
+        if (ownerInFrame && !riskDetected) {
+          displayLabel += ' ✓ SAFE';
+        } else if (riskDetected) {
+          displayLabel += ' ⚠ RISK';
+        }
+
+        _recognitionLabel = displayLabel;
         _recognitionName = (name ?? '').trim();
         _recognitionDistance = distance?.toDouble();
         setState(() {});
 
         if ((isKnown == false ||
-                _recognitionLabel.toLowerCase() == 'unknown') &&
+                _recognitionLabel.toLowerCase().contains('unknown')) &&
             _processedFrame != null) {
           _pushUnknownNotification();
         }
         if (riskDetected) {
-          _showError('⚠️ Risk detected by server!');
+          _showError('⚠️ Risk detected! Unknown person with dangerous object!');
         }
         return;
       }
