@@ -373,52 +373,31 @@ class AuthService {
   // ── GOOGLE SIGN IN (via Supabase OAuth) ──────────────────────────────────
   static Future<AuthResult> signInWithGoogle() async {
     try {
-      final supabase = (await _getSupabase());
-      if (supabase == null) {
-        return AuthResult(
-          success: false,
-          message: 'Supabase not initialized. Please try again.',
-        );
-      }
+      final SupabaseClient client = Supabase.instance.client;
 
-      await supabase.auth.signInWithOAuth(
+      final res = await client.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: 'io.supabase.theguardian://login-callback/',
       );
 
-      // Check if user is signed in after OAuth
-      await Future.delayed(const Duration(seconds: 2));
-      final session = supabase.auth.currentSession;
+      if (!res) {
+        return AuthResult(
+          success: false,
+          message: 'Google sign-in was cancelled.',
+        );
+      }
+
+      // Wait for OAuth callback
+      await Future.delayed(const Duration(seconds: 3));
+      final session = client.auth.currentSession;
       if (session != null) {
-        final authUser = supabase.auth.currentUser;
+        final authUser = client.auth.currentUser;
         final email = authUser?.email ?? 'google_user@gmail.com';
         final name = authUser?.userMetadata?['full_name']?.toString() ??
             authUser?.userMetadata?['name']?.toString() ??
             'Google User';
 
-        // Save locally
-        final users = await _readUsersRaw();
-        final exists = users.any(
-          (u) => (u['email']?.toString().trim().toLowerCase() ?? '') == email.toLowerCase(),
-        );
-        if (!exists) {
-          final nextId = users.isEmpty
-              ? 1
-              : users.map((u) => (u['id'] as int? ?? 0)).reduce((a, b) => a > b ? a : b) + 1;
-          users.add({
-            'id': nextId,
-            'fullName': name,
-            'email': email.toLowerCase(),
-            'password': '',
-            'createdAt': _today(),
-            'loginCount': 1,
-            'lastLoginAt': DateTime.now().toIso8601String(),
-            'provider': 'google',
-          });
-          await _writeUsersRaw(users);
-        }
-
-        await _appendAudit(action: 'google_signin', email: email, name: name, success: true);
+        await _saveOAuthUser(name, email, 'google');
 
         return AuthResult(
           success: true,
@@ -433,10 +412,9 @@ class AuthService {
         );
       }
 
-      // OAuth flow started but user hasn't completed yet
       return AuthResult(
         success: false,
-        message: 'Google sign-in cancelled or pending. Please try again.',
+        message: 'Google sign-in pending. Complete sign-in in browser.',
       );
     } catch (e) {
       return AuthResult(success: false, message: 'Google sign-in failed: $e');
@@ -446,48 +424,28 @@ class AuthService {
   // ── APPLE SIGN IN (via Supabase OAuth) ──────────────────────────────────
   static Future<AuthResult> signInWithApple() async {
     try {
-      final supabase = (await _getSupabase());
-      if (supabase == null) {
-        return AuthResult(
-          success: false,
-          message: 'Supabase not initialized. Please try again.',
-        );
-      }
+      final SupabaseClient client = Supabase.instance.client;
 
-      await supabase.auth.signInWithOAuth(
+      final res = await client.auth.signInWithOAuth(
         OAuthProvider.apple,
         redirectTo: 'io.supabase.theguardian://login-callback/',
       );
 
-      await Future.delayed(const Duration(seconds: 2));
-      final session = supabase.auth.currentSession;
+      if (!res) {
+        return AuthResult(
+          success: false,
+          message: 'Apple sign-in was cancelled.',
+        );
+      }
+
+      await Future.delayed(const Duration(seconds: 3));
+      final session = client.auth.currentSession;
       if (session != null) {
-        final authUser = supabase.auth.currentUser;
+        final authUser = client.auth.currentUser;
         final email = authUser?.email ?? 'apple_user@icloud.com';
         final name = authUser?.userMetadata?['full_name']?.toString() ?? 'Apple User';
 
-        final users = await _readUsersRaw();
-        final exists = users.any(
-          (u) => (u['email']?.toString().trim().toLowerCase() ?? '') == email.toLowerCase(),
-        );
-        if (!exists) {
-          final nextId = users.isEmpty
-              ? 1
-              : users.map((u) => (u['id'] as int? ?? 0)).reduce((a, b) => a > b ? a : b) + 1;
-          users.add({
-            'id': nextId,
-            'fullName': name,
-            'email': email.toLowerCase(),
-            'password': '',
-            'createdAt': _today(),
-            'loginCount': 1,
-            'lastLoginAt': DateTime.now().toIso8601String(),
-            'provider': 'apple',
-          });
-          await _writeUsersRaw(users);
-        }
-
-        await _appendAudit(action: 'apple_signin', email: email, name: name, success: true);
+        await _saveOAuthUser(name, email, 'apple');
 
         return AuthResult(
           success: true,
@@ -504,20 +462,35 @@ class AuthService {
 
       return AuthResult(
         success: false,
-        message: 'Apple sign-in cancelled or pending. Please try again.',
+        message: 'Apple sign-in pending. Complete sign-in in browser.',
       );
     } catch (e) {
       return AuthResult(success: false, message: 'Apple sign-in failed: $e');
     }
   }
 
-  // Helper to get Supabase client
-  static Future<dynamic> _getSupabase() async {
-    try {
-      final supabase = Supabase.instance.client;
-      return supabase;
-    } catch (_) {
-      return null;
+  // Helper: save OAuth user locally
+  static Future<void> _saveOAuthUser(String name, String email, String provider) async {
+    final users = await _readUsersRaw();
+    final exists = users.any(
+      (u) => (u['email']?.toString().trim().toLowerCase() ?? '') == email.toLowerCase(),
+    );
+    if (!exists) {
+      final nextId = users.isEmpty
+          ? 1
+          : users.map((u) => (u['id'] as int? ?? 0)).reduce((a, b) => a > b ? a : b) + 1;
+      users.add({
+        'id': nextId,
+        'fullName': name,
+        'email': email.toLowerCase(),
+        'password': '',
+        'createdAt': _today(),
+        'loginCount': 1,
+        'lastLoginAt': DateTime.now().toIso8601String(),
+        'provider': provider,
+      });
+      await _writeUsersRaw(users);
     }
+    await _appendAudit(action: '${provider}_signin', email: email, name: name, success: true);
   }
 }
