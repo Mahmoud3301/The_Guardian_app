@@ -183,7 +183,6 @@
 //   }
 // }
 
-
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -208,7 +207,10 @@ class AuthService {
     if (raw == null || raw.isEmpty) return [];
     final decoded = jsonDecode(raw);
     if (decoded is! List) return [];
-    return decoded.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+    return decoded
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
   }
 
   static Future<void> _writeUsersRaw(List<Map<String, dynamic>> users) async {
@@ -242,7 +244,9 @@ class AuthService {
 
   static Future<String> exportAuthEventsCsv() async {
     final prefs = await SharedPreferences.getInstance();
-    final rows = prefs.getStringList(_eventsKey) ?? const ['timestamp,action,email,name,success'];
+    final rows =
+        prefs.getStringList(_eventsKey) ??
+        const ['timestamp,action,email,name,success'];
     return rows.join('\n');
   }
 
@@ -255,13 +259,21 @@ class AuthService {
     final users = await _readUsersRaw();
     final idx = users.indexWhere(
       (u) =>
-          (u['email']?.toString().trim().toLowerCase() ?? '') == normalizedEmail &&
+          (u['email']?.toString().trim().toLowerCase() ?? '') ==
+              normalizedEmail &&
           (u['password']?.toString() ?? '') == password,
     );
 
     if (idx == -1) {
-      await _appendAudit(action: 'login', email: normalizedEmail, success: false);
-      return AuthResult(success: false, message: 'Incorrect email or password.');
+      await _appendAudit(
+        action: 'login',
+        email: normalizedEmail,
+        success: false,
+      );
+      return AuthResult(
+        success: false,
+        message: 'Incorrect email or password.',
+      );
     }
 
     final user = users[idx];
@@ -300,16 +312,29 @@ class AuthService {
     final normalizedName = fullName.trim().isEmpty ? 'User' : fullName.trim();
     final users = await _readUsersRaw();
     final exists = users.any(
-      (u) => (u['email']?.toString().trim().toLowerCase() ?? '') == normalizedEmail,
+      (u) =>
+          (u['email']?.toString().trim().toLowerCase() ?? '') ==
+          normalizedEmail,
     );
     if (exists) {
-      await _appendAudit(action: 'signup', email: normalizedEmail, name: normalizedName, success: false);
-      return AuthResult(success: false, message: 'An account with this email already exists.');
+      await _appendAudit(
+        action: 'signup',
+        email: normalizedEmail,
+        name: normalizedName,
+        success: false,
+      );
+      return AuthResult(
+        success: false,
+        message: 'An account with this email already exists.',
+      );
     }
 
     final nextId = users.isEmpty
         ? 1
-        : users.map((u) => (u['id'] as int? ?? 0)).reduce((a, b) => a > b ? a : b) + 1;
+        : users
+                  .map((u) => (u['id'] as int? ?? 0))
+                  .reduce((a, b) => a > b ? a : b) +
+              1;
     final newUser = <String, dynamic>{
       'id': nextId,
       'fullName': normalizedName,
@@ -321,7 +346,12 @@ class AuthService {
     };
     users.add(newUser);
     await _writeUsersRaw(users);
-    await _appendAudit(action: 'signup', email: normalizedEmail, name: normalizedName, success: true);
+    await _appendAudit(
+      action: 'signup',
+      email: normalizedEmail,
+      name: normalizedName,
+      success: true,
+    );
 
     return AuthResult(
       success: true,
@@ -346,28 +376,31 @@ class AuthService {
     final users = await _readUsersRaw();
     final idx = users.indexWhere(
       (u) =>
-          (u['email']?.toString().trim().toLowerCase() ?? '') == normalizedEmail &&
+          (u['email']?.toString().trim().toLowerCase() ?? '') ==
+              normalizedEmail &&
           (u['password']?.toString() ?? '') == oldPassword,
     );
     if (idx == -1) {
-      return AuthResult(success: false, message: 'Old password is incorrect or email not found.');
+      return AuthResult(
+        success: false,
+        message: 'Old password is incorrect or email not found.',
+      );
     }
     final updated = Map<String, dynamic>.from(users[idx]);
     updated['password'] = newPassword;
     users[idx] = updated;
     await _writeUsersRaw(users);
 
-    return AuthResult(
-      success: true,
-      message: 'Password updated successfully!',
-    );
+    return AuthResult(success: true, message: 'Password updated successfully!');
   }
 
   static Future<bool> emailExists(String email) async {
     final normalizedEmail = email.trim().toLowerCase();
     final users = await _readUsersRaw();
     return users.any(
-      (u) => (u['email']?.toString().trim().toLowerCase() ?? '') == normalizedEmail,
+      (u) =>
+          (u['email']?.toString().trim().toLowerCase() ?? '') ==
+          normalizedEmail,
     );
   }
 
@@ -402,7 +435,8 @@ class AuthService {
       if (session != null) {
         final authUser = client.auth.currentUser;
         final email = authUser?.email ?? 'google_user@gmail.com';
-        final name = authUser?.userMetadata?['full_name']?.toString() ??
+        final name =
+            authUser?.userMetadata?['full_name']?.toString() ??
             authUser?.userMetadata?['name']?.toString() ??
             'Google User';
 
@@ -452,7 +486,8 @@ class AuthService {
       if (session != null) {
         final authUser = client.auth.currentUser;
         final email = authUser?.email ?? 'apple_user@icloud.com';
-        final name = authUser?.userMetadata?['full_name']?.toString() ?? 'Apple User';
+        final name =
+            authUser?.userMetadata?['full_name']?.toString() ?? 'Apple User';
 
         await _saveOAuthUser(name, email, 'apple');
 
@@ -479,15 +514,24 @@ class AuthService {
   }
 
   // Helper: save OAuth user locally
-  static Future<void> _saveOAuthUser(String name, String email, String provider) async {
+  static Future<void> _saveOAuthUser(
+    String name,
+    String email,
+    String provider,
+  ) async {
     final users = await _readUsersRaw();
     final exists = users.any(
-      (u) => (u['email']?.toString().trim().toLowerCase() ?? '') == email.toLowerCase(),
+      (u) =>
+          (u['email']?.toString().trim().toLowerCase() ?? '') ==
+          email.toLowerCase(),
     );
     if (!exists) {
       final nextId = users.isEmpty
           ? 1
-          : users.map((u) => (u['id'] as int? ?? 0)).reduce((a, b) => a > b ? a : b) + 1;
+          : users
+                    .map((u) => (u['id'] as int? ?? 0))
+                    .reduce((a, b) => a > b ? a : b) +
+                1;
       users.add({
         'id': nextId,
         'fullName': name,
@@ -500,6 +544,11 @@ class AuthService {
       });
       await _writeUsersRaw(users);
     }
-    await _appendAudit(action: '${provider}_signin', email: email, name: name, success: true);
+    await _appendAudit(
+      action: '${provider}_signin',
+      email: email,
+      name: name,
+      success: true,
+    );
   }
 }
