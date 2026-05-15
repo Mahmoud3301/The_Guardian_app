@@ -33,7 +33,7 @@ class _LiveVideoPageState extends State<LiveVideoPage> {
   Uint8List? _processedFrame;
   String _recognitionLabel = 'Waiting recognition...';
   String _recognitionName = '';
-  double? _recognitionDistance;
+
   DateTime? _lastUnknownNotificationAt;
   Uint8List? _lastFaceCrop;
 
@@ -250,7 +250,7 @@ class _LiveVideoPageState extends State<LiveVideoPage> {
         final isKnown = decoded['is_known'] as bool?;
         final label = decoded['label']?.toString();
         final name = decoded['name']?.toString();
-        final distance = decoded['distance'] as num?;
+
         final riskDetected = decoded['risk_detected'] == true;
         final ownerInFrame = decoded['owner_in_frame'] == true;
         final isOwner = decoded['is_owner'] == true;
@@ -276,7 +276,7 @@ class _LiveVideoPageState extends State<LiveVideoPage> {
 
         _recognitionLabel = displayLabel;
         _recognitionName = (name ?? '').trim();
-        _recognitionDistance = distance?.toDouble();
+
         setState(() {});
 
         if ((isKnown == false ||
@@ -669,14 +669,7 @@ class _LiveVideoPageState extends State<LiveVideoPage> {
                         fontSize: 12,
                       ),
                     ),
-                  if (_recognitionDistance != null)
-                    Text(
-                      'Distance: ${_recognitionDistance!.toStringAsFixed(3)}',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                      ),
-                    ),
+
                 ],
               ),
             ),
