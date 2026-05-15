@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/widgets/app_nav.dart';
 import '../core/app_colors.dart';
 import '../core/user_model.dart';
+import '../services/backend_service.dart';
+import '../services/supabase_service.dart';
 import '../widgets/shared_widgets.dart';
 
 class HomePage extends StatefulWidget {
@@ -14,6 +16,24 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool _isArmed = true;
+  bool _backendOnline = false;
+  bool _checkingStatus = true;
+  int _knownFaces = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkStatus();
+  }
+
+  Future<void> _checkStatus() async {
+    setState(() => _checkingStatus = true);
+    try {
+      _backendOnline = await BackendService.instance.checkHealth();
+      _knownFaces = SupabaseService.instance.nameCount;
+    } catch (_) {}
+    if (mounted) setState(() => _checkingStatus = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,9 +90,15 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       _buildToggleSwitch(),
                       const SizedBox(height: 20),
-                      _buildInfoCard(label: 'Battery Health', icon: Icons.battery_full_rounded),
+                      _buildStatusCard(),
                       const SizedBox(height: 14),
-                      _buildInfoCard(label: 'Connection', icon: Icons.wifi_rounded),
+                      _buildInfoCard(
+                          label: 'Battery Health',
+                          icon: Icons.battery_full_rounded),
+                      const SizedBox(height: 14),
+                      _buildInfoCard(
+                          label: 'Connection',
+                          icon: Icons.wifi_rounded),
                       const SizedBox(height: 14),
                       _buildBackupCard(),
                     ],
@@ -119,7 +145,8 @@ class _HomePageState extends State<HomePage> {
             child: AnimatedAlign(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOut,
-              alignment: _isArmed ? Alignment.centerRight : Alignment.centerLeft,
+              alignment:
+                  _isArmed ? Alignment.centerRight : Alignment.centerLeft,
               child: Container(
                 margin: const EdgeInsets.all(4),
                 width: 26,
@@ -133,6 +160,133 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
+    );
+  }
+
+  /// New: shows backend + Supabase connection status
+  Widget _buildStatusCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.07),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'System Status',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: 0.2,
+                ),
+              ),
+              GestureDetector(
+                onTap: _checkingStatus ? null : _checkStatus,
+                child: _checkingStatus
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                            color: Colors.white54, strokeWidth: 2),
+                      )
+                    : const Icon(Icons.refresh_rounded,
+                        color: Colors.white54, size: 22),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Backend status
+          _statusRow(
+            icon: _backendOnline
+                ? Icons.dns_rounded
+                : Icons.cloud_off_rounded,
+            label: 'Docker Backend',
+            value: _backendOnline ? 'Online' : 'Offline',
+            color: _backendOnline
+                ? const Color(0xFF2ecc71)
+                : const Color(0xFFFF5722),
+          ),
+          const SizedBox(height: 10),
+
+          // Supabase status
+          _statusRow(
+            icon: Icons.cloud_done_rounded,
+            label: 'Supabase Cloud',
+            value: SupabaseService.instance.isReady
+                ? 'Connected'
+                : 'Initializing…',
+            color: SupabaseService.instance.isReady
+                ? const Color(0xFF2ecc71)
+                : const Color(0xFFFF9800),
+          ),
+          const SizedBox(height: 10),
+
+          // Known faces
+          _statusRow(
+            icon: Icons.face_rounded,
+            label: 'Known Faces',
+            value: '$_knownFaces persons',
+            color: const Color(0xFF6B8A9A),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _statusRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Row(
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: color, size: 16),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.white70,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withOpacity(0.3)),
+          ),
+          child: Text(
+            value,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ),
+      ],
     );
   }
 

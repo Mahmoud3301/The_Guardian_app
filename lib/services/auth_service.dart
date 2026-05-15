@@ -184,6 +184,8 @@
 // }
 
 
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../core/user_model.dart';
 
 class AuthResult {
@@ -195,60 +197,163 @@ class AuthResult {
 }
 
 class AuthService {
-  // ── LOGIN — always succeeds, no checks ───────────────────────────────────
+  static const String _usersKey = 'guardian_users_v1';
+  static const String _eventsKey = 'guardian_auth_events_csv_v1';
+
+  static Future<List<Map<String, dynamic>>> _readUsersRaw() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_usersKey);
+    if (raw == null || raw.isEmpty) return [];
+    final decoded = jsonDecode(raw);
+    if (decoded is! List) return [];
+    return decoded.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+  }
+
+  static Future<void> _writeUsersRaw(List<Map<String, dynamic>> users) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_usersKey, jsonEncode(users));
+  }
+
+  static String _today() {
+    final now = DateTime.now();
+    return '${now.day}/${now.month}/${now.year}';
+  }
+
+  static String _csvEsc(String v) => '"${v.replaceAll('"', '""')}"';
+
+  static Future<void> _appendAudit({
+    required String action,
+    required String email,
+    required bool success,
+    String name = '',
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final existing = prefs.getStringList(_eventsKey) ?? <String>[];
+    if (existing.isEmpty) {
+      existing.add('timestamp,action,email,name,success');
+    }
+    existing.add(
+      '${_csvEsc(DateTime.now().toIso8601String())},${_csvEsc(action)},${_csvEsc(email)},${_csvEsc(name)},${success ? 'true' : 'false'}',
+    );
+    await prefs.setStringList(_eventsKey, existing);
+  }
+
+  static Future<String> exportAuthEventsCsv() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rows = prefs.getStringList(_eventsKey) ?? const ['timestamp,action,email,name,success'];
+    return rows.join('\n');
+  }
+
   static Future<AuthResult> login({
     required String email,
     required String password,
   }) async {
     await Future.delayed(const Duration(milliseconds: 400));
+    final normalizedEmail = email.trim().toLowerCase();
+    final users = await _readUsersRaw();
+    final idx = users.indexWhere(
+      (u) =>
+          (u['email']?.toString().trim().toLowerCase() ?? '') == normalizedEmail &&
+          (u['password']?.toString() ?? '') == password,
+    );
 
-    final raw  = email.trim();
-    final name = raw.contains('@') ? raw.split('@').first : raw;
-    final displayName = name.isNotEmpty
-        ? name[0].toUpperCase() + name.substring(1)
-        : 'User';
+    if (idx == -1) {
+      await _appendAudit(action: 'login', email: normalizedEmail, success: false);
+      return AuthResult(success: false, message: 'Incorrect email or password.');
+    }
+
+    final user = users[idx];
+    final loginCount = (user['loginCount'] as int? ?? 0) + 1;
+    user['loginCount'] = loginCount;
+    user['lastLoginAt'] = DateTime.now().toIso8601String();
+    users[idx] = user;
+    await _writeUsersRaw(users);
+    await _appendAudit(
+      action: 'login',
+      email: normalizedEmail,
+      name: user['fullName']?.toString() ?? '',
+      success: true,
+    );
 
     return AuthResult(
       success: true,
       message: 'Login successful!',
       user: UserModel(
-        id: 1,
-        fullName: displayName,
-        email: raw.isNotEmpty ? raw : 'user@guardian.app',
+        id: user['id'] as int? ?? 1,
+        fullName: user['fullName']?.toString() ?? 'User',
+        email: normalizedEmail,
         password: password,
-        createdAt: _today(),
+        createdAt: user['createdAt']?.toString() ?? _today(),
       ),
     );
   }
 
-  // ── REGISTER — always succeeds, no checks ────────────────────────────────
   static Future<AuthResult> register({
     required String fullName,
     required String email,
     required String password,
   }) async {
     await Future.delayed(const Duration(milliseconds: 400));
+    final normalizedEmail = email.trim().toLowerCase();
+    final normalizedName = fullName.trim().isEmpty ? 'User' : fullName.trim();
+    final users = await _readUsersRaw();
+    final exists = users.any(
+      (u) => (u['email']?.toString().trim().toLowerCase() ?? '') == normalizedEmail,
+    );
+    if (exists) {
+      await _appendAudit(action: 'signup', email: normalizedEmail, name: normalizedName, success: false);
+      return AuthResult(success: false, message: 'An account with this email already exists.');
+    }
+
+    final nextId = users.isEmpty
+        ? 1
+        : users.map((u) => (u['id'] as int? ?? 0)).reduce((a, b) => a > b ? a : b) + 1;
+    final newUser = <String, dynamic>{
+      'id': nextId,
+      'fullName': normalizedName,
+      'email': normalizedEmail,
+      'password': password,
+      'createdAt': _today(),
+      'loginCount': 0,
+      'lastLoginAt': '',
+    };
+    users.add(newUser);
+    await _writeUsersRaw(users);
+    await _appendAudit(action: 'signup', email: normalizedEmail, name: normalizedName, success: true);
 
     return AuthResult(
       success: true,
       message: 'Account created successfully!',
       user: UserModel(
-        id: 1,
-        fullName: fullName.trim().isNotEmpty ? fullName.trim() : 'User',
-        email: email.trim().isNotEmpty ? email.trim() : 'user@guardian.app',
+        id: nextId,
+        fullName: normalizedName,
+        email: normalizedEmail,
         password: password,
         createdAt: _today(),
       ),
     );
   }
 
-  // ── RESET PASSWORD — always succeeds, no checks ───────────────────────────
   static Future<AuthResult> resetPassword({
     required String email,
     required String oldPassword,
     required String newPassword,
   }) async {
     await Future.delayed(const Duration(milliseconds: 400));
+    final normalizedEmail = email.trim().toLowerCase();
+    final users = await _readUsersRaw();
+    final idx = users.indexWhere(
+      (u) =>
+          (u['email']?.toString().trim().toLowerCase() ?? '') == normalizedEmail &&
+          (u['password']?.toString() ?? '') == oldPassword,
+    );
+    if (idx == -1) {
+      return AuthResult(success: false, message: 'Old password is incorrect or email not found.');
+    }
+    final updated = Map<String, dynamic>.from(users[idx]);
+    updated['password'] = newPassword;
+    users[idx] = updated;
+    await _writeUsersRaw(users);
 
     return AuthResult(
       success: true,
@@ -256,14 +361,11 @@ class AuthService {
     );
   }
 
-  // ── EMAIL EXISTS — always returns false (no real DB) ──────────────────────
   static Future<bool> emailExists(String email) async {
-    return false;
-  }
-
-  // ── Helper ────────────────────────────────────────────────────────────────
-  static String _today() {
-    final now = DateTime.now();
-    return '${now.day}/${now.month}/${now.year}';
+    final normalizedEmail = email.trim().toLowerCase();
+    final users = await _readUsersRaw();
+    return users.any(
+      (u) => (u['email']?.toString().trim().toLowerCase() ?? '') == normalizedEmail,
+    );
   }
 }

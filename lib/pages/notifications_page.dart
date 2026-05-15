@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
 import 'package:flutter_application_1/widgets/app_nav.dart';
 import '../core/app_colors.dart';
 import '../core/user_model.dart';
 import '../core/person_store.dart';
+import '../core/security_event_store.dart';
+import '../services/backend_service.dart';
+import '../services/supabase_service.dart';
 import '../widgets/shared_widgets.dart';
 
 enum NotifStatus { pending, risk, dismissed }
@@ -10,12 +14,16 @@ enum NotifStatus { pending, risk, dismissed }
 class _NotifEntry {
   final String id;
   final String imagePath;
+  final Uint8List? imageBytes;
+  final Uint8List? faceCropBytes;
   String label;
   NotifStatus status;
 
   _NotifEntry({
     required this.id,
     required this.imagePath,
+    this.imageBytes,
+    this.faceCropBytes,
     this.label = 'Unknown',
     this.status = NotifStatus.pending,
   });
@@ -30,13 +38,42 @@ class NotificationsPage extends StatefulWidget {
 }
 
 class _NotificationsPageState extends State<NotificationsPage> {
-  final List<_NotifEntry> _notifications = [
-    _NotifEntry(id: '1', imagePath: 'assets/images/unknown1.jpeg'),
-    _NotifEntry(id: '2', imagePath: 'assets/images/unknown2.jpeg'),
-    _NotifEntry(id: '3', imagePath: 'assets/images/unknown3.jpeg'),
-  ];
+  final List<_NotifEntry> _notifications = [];
 
   OverlayEntry? _overlayEntry;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncFromSecurityEvents();
+  }
+
+  void _syncFromSecurityEvents() {
+    _notifications.clear();
+    for (final e in SecurityEventStore.instance.events) {
+      _notifications.add(
+        _NotifEntry(
+          id: e.id,
+          imagePath: e.imagePathFallback,
+          imageBytes: e.imageBytes,
+          faceCropBytes: e.faceCropBytes,
+          label: e.label,
+          status: e.status == SecurityEventStatus.pending
+              ? NotifStatus.pending
+              : e.status == SecurityEventStatus.risk
+                  ? NotifStatus.risk
+                  : NotifStatus.dismissed,
+        ),
+      );
+    }
+    if (_notifications.isEmpty) {
+      _notifications.addAll([
+        _NotifEntry(id: '1', imagePath: 'assets/images/unknown1.jpeg'),
+        _NotifEntry(id: '2', imagePath: 'assets/images/unknown2.jpeg'),
+        _NotifEntry(id: '3', imagePath: 'assets/images/unknown3.jpeg'),
+      ]);
+    }
+  }
 
   void _showToast(String message,
       {IconData icon = Icons.check_circle_rounded,
@@ -59,22 +96,47 @@ class _NotificationsPageState extends State<NotificationsPage> {
       barrierColor: Colors.black.withOpacity(0.6),
       builder: (ctx) => _NamingDialog(
         imagePath: entry.imagePath,
+        imageBytes: entry.faceCropBytes ?? entry.imageBytes,
         controller: ctrl,
         initialRole: 'Visitor',
-        onDone: (name, role) {
+        onDone: (name, role) async {
+          final displayName = name.isNotEmpty ? name : 'Unknown';
+          final faceBytes = entry.faceCropBytes ?? entry.imageBytes;
+
+          // Register face with backend (tries Docker, falls back to Supabase)
+          if (faceBytes != null) {
+            BackendService.instance.addFace(displayName, faceBytes);
+
+            // Also upload photo directly to Supabase for cloud sync
+            SupabaseService.instance
+                .uploadFacePhoto(displayName, faceBytes)
+                .then((url) {
+              if (url != null) {
+                debugPrint('Face photo uploaded to Supabase: $url');
+              }
+            });
+          }
+
+          // Get Supabase URL for the person
+          final networkUrl =
+              SupabaseService.instance.getLatestPhotoUrl(displayName);
+
           // Save to shared store
           PersonStore.instance.addPerson(
-            name.isNotEmpty ? name : 'Unknown',
+            displayName,
             role,
             entry.imagePath,
+            imageBytes: faceBytes,
+            networkUrl: networkUrl,
           );
+          SecurityEventStore.instance.renameAndDismiss(entry.id, name);
           setState(() {
-            entry.label = name.isNotEmpty ? name : 'Unknown';
+            entry.label = displayName;
             entry.status = NotifStatus.dismissed;
           });
           Navigator.pop(ctx);
           _showToast(
-            '${name.isNotEmpty ? name : "Person"} added as $role',
+            '$displayName added as $role',
             icon: Icons.person_add_rounded,
             color: const Color(0xFF4CAF50),
           );
@@ -85,22 +147,25 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   void _onNo(_NotifEntry entry) {
+    SecurityEventStore.instance.markRisk(entry.id);
     setState(() => entry.status = NotifStatus.risk);
     _showToast('Alert activated! Risk detected.',
         icon: Icons.warning_rounded, color: const Color(0xFFFF5722));
   }
 
   void _onLockDoor(_NotifEntry entry) {
-    // Save to risk store
-    PersonStore.instance.addRisk(entry.imagePath, 'Lock Door');
+    PersonStore.instance.addRisk(entry.imagePath, 'Lock Door',
+        imageBytes: entry.faceCropBytes ?? entry.imageBytes);
+    SecurityEventStore.instance.dismiss(entry.id);
     setState(() => entry.status = NotifStatus.dismissed);
     _showToast('Door locked successfully!',
         icon: Icons.lock_rounded, color: const Color(0xFF2196F3));
   }
 
   void _onCallEmergency(_NotifEntry entry) {
-    // Save to risk store
-    PersonStore.instance.addRisk(entry.imagePath, 'Call Emergency');
+    PersonStore.instance.addRisk(entry.imagePath, 'Call Emergency',
+        imageBytes: entry.faceCropBytes ?? entry.imageBytes);
+    SecurityEventStore.instance.dismiss(entry.id);
     setState(() => entry.status = NotifStatus.dismissed);
     _showToast('Emergency services called!',
         icon: Icons.emergency_rounded, color: const Color(0xFFFF1744));
@@ -117,6 +182,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   @override
   Widget build(BuildContext context) {
+    _syncFromSecurityEvents();
     return GradientScaffold(
       child: SafeArea(
         child: Column(
@@ -205,7 +271,10 @@ class _PersonCard extends StatelessWidget {
           const SizedBox(height: 14),
           Center(
               child: _FaceImage(
-                  imagePath: entry.imagePath, width: 160, height: 180)),
+                  imagePath: entry.imagePath,
+                  imageBytes: entry.faceCropBytes ?? entry.imageBytes,
+                  width: 160,
+                  height: 180)),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -276,7 +345,10 @@ class _RiskCard extends StatelessWidget {
             child: Column(
               children: [
                 _FaceImage(
-                    imagePath: entry.imagePath, width: 120, height: 130),
+                    imagePath: entry.imagePath,
+                    imageBytes: entry.faceCropBytes ?? entry.imageBytes,
+                    width: 120,
+                    height: 130),
                 const SizedBox(height: 12),
                 const Text('Risk ...',
                     style: TextStyle(
@@ -315,13 +387,14 @@ class _RiskCard extends StatelessWidget {
   }
 }
 
-// ── Face image — FIX: replaced clipBehavior on Container with ClipRRect ────
+// ── Face image ─────────────────────────────────────────────────────────────
 class _FaceImage extends StatelessWidget {
   final String imagePath;
+  final Uint8List? imageBytes;
   final double width;
   final double height;
   const _FaceImage(
-      {required this.imagePath, required this.width, required this.height});
+      {required this.imagePath, this.imageBytes, required this.width, required this.height});
 
   @override
   Widget build(BuildContext context) {
@@ -339,14 +412,23 @@ class _FaceImage extends StatelessWidget {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.asset(
-              imagePath,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                  color: const Color(0xFF1C2B38),
-                  child: const Icon(Icons.person,
-                      color: Colors.white38, size: 48)),
-            ),
+            child: imageBytes != null
+                ? Image.memory(
+                    imageBytes!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      color: const Color(0xFF1C2B38),
+                      child: const Icon(Icons.person, color: Colors.white38, size: 48),
+                    ),
+                  )
+                : Image.asset(
+                    imagePath,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                        color: const Color(0xFF1C2B38),
+                        child: const Icon(Icons.person,
+                            color: Colors.white38, size: 48)),
+                  ),
           ),
         ),
         Positioned(
@@ -372,11 +454,13 @@ class _FaceImage extends StatelessWidget {
 // ── Naming dialog ──────────────────────────────────────────────────────────
 class _NamingDialog extends StatefulWidget {
   final String imagePath;
+  final Uint8List? imageBytes;
   final TextEditingController controller;
   final String initialRole;
   final void Function(String name, String role) onDone;
   const _NamingDialog(
       {required this.imagePath,
+      this.imageBytes,
       required this.controller,
       required this.initialRole,
       required this.onDone});
@@ -429,7 +513,10 @@ class _NamingDialogState extends State<_NamingDialog> {
                         fontWeight: FontWeight.w600)),
                 const SizedBox(height: 16),
                 _FaceImage(
-                    imagePath: widget.imagePath, width: 120, height: 130),
+                    imagePath: widget.imagePath,
+                    imageBytes: widget.imageBytes,
+                    width: 120,
+                    height: 130),
                 const SizedBox(height: 16),
             Container(
               height: 50,
