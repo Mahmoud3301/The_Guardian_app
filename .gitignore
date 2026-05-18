@@ -43,3 +43,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+.env
+.DS_Store
+person_photos/
+models/
+devtools_options.yaml
+supabase_integration_summary.md

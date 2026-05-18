@@ -1,17 +1,27 @@
-FROM minasaher/yolov8-face-detection:latest
+FROM continuumio/miniconda3:latest
 
-# Install system deps for dlib / face_recognition + avahi for mDNS
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    cmake build-essential libopenblas-dev liblapack-dev \
-    avahi-daemon avahi-utils libnss-mdns \
-    && rm -rf /var/lib/apt/lists/*
+RUN conda install -y -c conda-forge \
+    dlib \
+    opencv \
+    numpy \
+ && conda clean -afy
 
-# Install face_recognition + supabase client + zeroconf for mDNS
-RUN pip install --no-cache-dir face_recognition supabase requests zeroconf
-
-# Replace the default app with our custom server
-COPY server.py /app/app.py
-
+RUN pip install --no-cache-dir \
+    face_recognition \
+    ultralytics \
+    fastapi \
+    "uvicorn[standard]" \
+    supabase \
+    requests \
+    zeroconf \
+    python-multipart
+    
 WORKDIR /app
+
+VOLUME ["/app/person_photos", "/app/custom_models"]
+
+COPY server.py /app/server.py
+
 EXPOSE 8000
-CMD ["python", "app.py"]
+
+CMD ["python", "server.py"]

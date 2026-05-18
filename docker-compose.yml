@@ -1,14 +1,17 @@
 services:
   guardian-backend:
-    build: ./docker
-    network_mode: host
+    build:
+      context: ./docker
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
     volumes:
       - ./person_photos:/app/person_photos
       - ./models:/app/custom_models
     environment:
       - PERSON_PHOTOS_DIR=/app/person_photos
       - MODELS_DIR=/app/custom_models
-      - SUPABASE_URL=https://ldtqguseonfhkjfxuocl.supabase.co
-      - SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdHFndXNlb25maGtqZnh1b2NsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDgwNzMsImV4cCI6MjA5MDk4NDA3M30.qSsDcm1rchiy3EWR9i3om3vZpII6F_iteGwaxr6XGNY
-      - SUPABASE_BUCKET=DataBase
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - SUPABASE_BUCKET=${SUPABASE_BUCKET:-DataBase}
     restart: unless-stopped

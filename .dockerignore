@@ -1,0 +1,36 @@
+# Flutter / Dart build artifacts
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+
+# Flutter platform directories (not needed by the Python backend)
+android/
+ios/
+linux/
+macos/
+web/
+windows/
+
+# Assets & source — backend only needs server.py
+lib/
+assets/
+test/
+
+# Models and person photos are mounted as volumes — don't bake into image
+models/
+person_photos/
+
+# Git & IDE
+.git/
+.gitignore
+.DS_Store
+*.md
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env

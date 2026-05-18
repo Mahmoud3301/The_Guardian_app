@@ -65,4 +65,21 @@ class SecurityEventStore {
     _events[idx].label = name.trim().isEmpty ? 'Unknown' : name.trim();
     _events[idx].status = SecurityEventStatus.dismissed;
   }
+
+  /// Permanently remove a single event.
+  void deleteEvent(String id) {
+    _events.removeWhere((e) => e.id == id);
+  }
+
+  /// Permanently remove all events.
+  void clearAll() {
+    _events.clear();
+  }
+
+  /// Neglect = dismiss without any label change (ignore it).
+  void neglect(String id) {
+    final idx = _events.indexWhere((e) => e.id == id);
+    if (idx == -1) return;
+    _events[idx].status = SecurityEventStatus.dismissed;
+  }
 }
